@@ -1,0 +1,280 @@
+#.cursorrules
+
+rules:
+
+  # 1. User ลงทะเบียน / Login
+  - id: "user-authentication"
+    description: "ตรวจสอบสิทธิ์ผู้ใช้ก่อนใช้งานระบบ"
+    trigger:
+      type: "onRequest"
+    steps:
+      - name: "ตรวจสอบ token"
+        action: "verifyAuthToken"
+        params:
+          token: "{{request.headers.Authorization}}"
+        onError:
+          action: "reject"
+          message: "โปรดเข้าสู่ระบบก่อนใช้งาน"
+
+  # 2. เลือกเติมพ้อยเกม
+  - id: "select-game-points"
+    description: "ผู้ใช้เลือกเกมและจำนวนพ้อยที่ต้องการเติม"
+    trigger:
+      type: "onAction"
+      action: "selectTopupOption"
+    steps:
+      - name: "บันทึกคำสั่งเติมพ้อยใน DB"
+        action: "createTopupOrder"
+        params:
+          userId: "{{userId}}"
+          game: "{{game}}"
+          amount: "{{amount}}"
+          userGameId: "{{userGameId}}"
+          status: "pending"
+
+  # 3. ชำระเงิน - แสดงข้อมูลบัญชีร้าน
+  - id: "show-bank-info"
+    description: "แสดงข้อมูลบัญชีธนาคารร้านให้ลูกค้า"
+    trigger:
+      type: "onPageLoad"
+      page: "checkout"
+    steps:
+      - name: "ดึงข้อมูลบัญชีร้าน"
+        action: "getShopBankInfo"
+
+  # 4. อัปโหลดสลิปเติมพ้อย (รองรับ multipart/form-data และ base64)
+  - id: "upload-slip"
+    description: "ลูกค้าอัปโหลดสลิปโอนเงิน"
+    trigger:
+      type: "onFileUpload"
+      field: "paymentSlip"
+    steps:
+      - name: "อัปโหลดไฟล์ไปยัง Storage (Cloudflare R2/Firebase)"
+        action: "uploadFileToStorage"
+        params:
+          file: "{{uploadedFile}}"
+        output: "slipUrl"
+      - name: "บันทึก URL สลิปในคำสั่งซื้อ"
+        action: "updateOrderSlipUrl"
+        params:
+          orderId: "{{orderId}}"
+          slipUrl: "{{slipUrl}}"
+
+  # 5. ตรวจสอบสลิปผ่าน EasySlip API + ออโต้เติมพ้อย
+  - id: "verify-slip-easyslip"
+    description: "ตรวจสอบสลิปกับ EasySlip API และเติมพ้อยอัตโนมัติ"
+    trigger:
+      type: "onSlipUploaded"
+    steps:
+      - name: "เรียก EasySlip API"
+        action: "callApi"
+        request:
+          url: "https://developer.easyslip.com/api/v1/verify"
+          method: "POST"
+          headers:
+            Content-Type: "application/json"
+            Authorization: "Bearer {{EASYSLIP_ACCESS_TOKEN}}"
+          body:
+            url: "{{slipUrl}}"
+            checkDuplicate: true
+        output: "verifyResult"
+
+      - name: "ตรวจสอบสถานะ API"
+        action: "switch"
+        input: "{{verifyResult.status}}"
+        cases:
+          - case: 200
+            steps:
+              - name: "ตรวจสอบบัญชีปลายทางตรงกับร้านไหม"
+                action: "condition"
+                condition: "{{verifyResult.data.receiver.bank.name}} == '{{shopBankName}}'"
+                steps:
+                  - name: "เติมพ้อยและอัปเดตสถานะคำสั่งซื้อ"
+                    action: "updateOrderStatusAndPoints"
+                    params:
+                      userId: "{{userId}}"
+                      orderId: "{{orderId}}"
+                      points: "{{verifyResult.data.amount.amount}}"
+                      status: "paid"
+                  - name: "แจ้งลูกค้าเติมพ้อยสำเร็จ"
+                    action: "notifyUser"
+                    params:
+                      userId: "{{userId}}"
+                      message: "เติมพ้อยสำเร็จ {{verifyResult.data.amount.amount}} พ้อย"
+                else:
+                  - name: "แจ้งลูกค้า บัญชีปลายทางไม่ตรง"
+                    action: "notifyUser"
+                    params:
+                      userId: "{{userId}}"
+                      message: "บัญชีปลายทางในสลิปไม่ตรงกับบัญชีร้าน กรุณาตรวจสอบและอัปโหลดใหม่"
+                  - name: "อัปเดตสถานะคำสั่งซื้อเป็น failed"
+                    action: "updateOrderStatus"
+                    params:
+                      orderId: "{{orderId}}"
+                      status: "failed"
+
+          - case: 400
+            steps:
+              - name: "จัดการ error ตามข้อความ"
+                action: "handleEasySlipError"
+                params:
+                  message: "{{verifyResult.message}}"
+          - default:
+              - name: "แจ้งลูกค้าเกิดข้อผิดพลาด"
+                action: "notifyUser"
+                params:
+                  userId: "{{userId}}"
+                  message: "เกิดข้อผิดพลาดในการตรวจสอบสลิป กรุณาลองใหม่ภายหลัง"
+
+  # 6. ระบบขายไอดีเกมออโต้ (เมื่อซื้อสำเร็จ ดึงไอดีจาก DB ให้เลย)
+  - id: "auto-sell-game-account"
+    description: "เมื่อผู้ใช้ซื้อไอดีเกม ดึงไอดีที่ยังว่างจาก DB ให้ทันที"
+    trigger:
+      type: "onAction"
+      action: "buyGameAccount"
+    steps:
+      - name: "ตรวจสอบสต็อกไอดีว่าง"
+        action: "checkAvailableGameAccounts"
+        params:
+          game: "{{game}}"
+          quantity: 1
+        output: "availableAccounts"
+
+      - name: "ถ้าไม่มีไอดีว่าง แจ้งผู้ใช้"
+        action: "condition"
+        condition: "{{availableAccounts.length}} > 0"
+        else:
+          - name: "แจ้งสินค้าหมด"
+            action: "notifyUser"
+            params:
+              userId: "{{userId}}"
+              message: "ขออภัย ไอดีเกมหมดชั่วคราว"
+
+      - name: "จองไอดีให้ผู้ใช้"
+        action: "reserveGameAccount"
+        params:
+          accountId: "{{availableAccounts[0].id}}"
+          userId: "{{userId}}"
+
+      - name: "อัปเดตคำสั่งซื้อสถานะ 'paid'"
+        action: "updateOrderStatus"
+        params:
+          orderId: "{{orderId}}"
+          status: "paid"
+
+      - name: "ส่งข้อมูลไอดีเกมให้ลูกค้า"
+        action: "sendGameAccountDetails"
+        params:
+          userId: "{{userId}}"
+          accountDetails: "{{availableAccounts[0]}}"
+
+  # 7. ตะกร้าสินค้า + สั่งซื้อ
+  - id: "manage-cart"
+    description: "จัดการตะกร้าสินค้า เติมพ้อยและไอดีเกม"
+    trigger:
+      type: "onAction"
+      action: "addToCart"
+    steps:
+      - name: "เพิ่มสินค้าในตะกร้า"
+        action: "addItemToCart"
+        params:
+          userId: "{{userId}}"
+          productId: "{{productId}}"
+          quantity: "{{quantity}}"
+
+  - id: "checkout-cart"
+    description: "ลูกค้าชำระเงินสินค้าทั้งหมดในตะกร้า"
+    trigger:
+      type: "onAction"
+      action: "checkout"
+    steps:
+      - name: "สร้างคำสั่งซื้อ"
+        action: "createOrder"
+        params:
+          userId: "{{userId}}"
+          cartItems: "{{cartItems}}"
+          status: "pending"
+
+      - name: "แสดงบัญชีธนาคารร้านให้ลูกค้า"
+        action: "getShopBankInfo"
+
+  # 8. แอดมิน Dashboard ดูคำสั่งซื้อ & จัดการ
+  - id: "admin-view-orders"
+    description: "แอดมินดูรายการเติมพ้อยและขายไอดี พร้อมสถานะคำสั่งซื้อ"
+    trigger:
+      type: "onPageLoad"
+      page: "admin/orders"
+    steps:
+      - name: "ดึงรายการคำสั่งซื้อ"
+        action: "fetchOrders"
+        params:
+          filterStatus: "{{filterStatus}}"
+
+  - id: "admin-update-order-status"
+    description: "แอดมินยืนยันหรือยกเลิกคำสั่งซื้อ"
+    trigger:
+      type: "onAction"
+      action: "updateOrderStatus"
+    steps:
+      - name: "อัปเดตสถานะคำสั่งซื้อ"
+        action: "updateOrderStatus"
+        params:
+          orderId: "{{orderId}}"
+          status: "{{newStatus}}"
+      - name: "แจ้งลูกค้า"
+        action: "notifyUser"
+        params:
+          userId: "{{orderUserId}}"
+          message: "คำสั่งซื้อของคุณถูกอัปเดตเป็น {{newStatus}}"
+
+  # 9. ระบบแจ้งเตือน error ต่าง ๆ (EasySlip, สินค้าหมด ฯลฯ)
+  - id: "notify-errors"
+    description: "แจ้งเตือนผู้ใช้เมื่อเกิดข้อผิดพลาดในระบบ"
+    trigger:
+      type: "onError"
+    steps:
+      - name: "แจ้งผู้ใช้"
+        action: "notifyUser"
+        params:
+          userId: "{{userId}}"
+          message: "{{errorMessage}}"
+
+  # 10. เพิ่มพ้อยหลังเติมสำเร็จ (สำหรับเลือกซื้อสินค้า)
+  - id: "add-points-to-user"
+    description: "เพิ่มพ้อยให้ผู้ใช้หลังตรวจสอบสลิปสำเร็จ"
+    trigger:
+      type: "manual"  # หรือ on event verify-slip-success
+    steps:
+      - name: "เพิ่มพ้อยในฐานข้อมูล"
+        action: "updateUserPoints"
+        params:
+          userId: "{{userId}}"
+          points: "{{pointsToAdd}}"
+
+  # 11. ระบบล็อกอิน / ออก
+  - id: "user-login"
+    description: "ระบบล็อกอิน"
+    trigger:
+      type: "onAction"
+      action: "login"
+    steps:
+      - name: "ตรวจสอบข้อมูลผู้ใช้"
+        action: "authenticateUser"
+        params:
+          username: "{{username}}"
+          password: "{{password}}"
+        onSuccess:
+          action: "issueAuthToken"
+        onFailure:
+          action: "reject"
+          message: "ข้อมูลผู้ใช้ไม่ถูกต้อง"
+
+  - id: "user-logout"
+    description: "ระบบออกจากระบบ"
+    trigger:
+      type: "onAction"
+      action: "logout"
+    steps:
+      - name: "ล้าง session/token"
+        action: "clearAuth"
+
