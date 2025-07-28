@@ -29,7 +29,7 @@ export class CloudflareR2 {
     // Initialize S3 client with Cloudflare R2 credentials
     this.client = new S3Client({
       region: 'auto',
-      endpoint: `https://${CLOUDFLARE_R2_CONFIG.accountId}.r2.cloudflarestorage.com`,
+      endpoint: CLOUDFLARE_R2_CONFIG.endpoint || `https://${CLOUDFLARE_R2_CONFIG.accountId}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId: CLOUDFLARE_R2_CONFIG.accessKeyId,
         secretAccessKey: CLOUDFLARE_R2_CONFIG.secretAccessKey,

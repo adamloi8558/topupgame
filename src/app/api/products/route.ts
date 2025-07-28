@@ -308,6 +308,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         products,
+        count: total,
         pagination: {
           page,
           limit,
@@ -319,7 +320,20 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Products API error:', error);
     return NextResponse.json(
-      { success: false, error: 'ไม่สามารถโหลดข้อมูลสินค้าได้' },
+      { 
+        success: false, 
+        error: 'ไม่สามารถโหลดข้อมูลสินค้าได้',
+        data: {
+          products: [],
+          count: 0,
+          pagination: {
+            page: 1,
+            limit: 12,
+            total: 0,
+            totalPages: 0,
+          },
+        }
+      },
       { status: 500 }
     );
   }
