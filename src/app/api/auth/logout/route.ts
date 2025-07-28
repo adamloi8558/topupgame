@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     // Create response with cleared auth cookie
     const response: ApiResponse = {
       success: true,
-      message: SUCCESS_MESSAGES.LOGOUT_SUCCESS,
+      message: SUCCESS_MESSAGES.LOGOUT,
     };
 
     const nextResponse = NextResponse.json(response);

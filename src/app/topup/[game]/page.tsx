@@ -22,7 +22,7 @@ export default function GameTopupPage() {
     const loadGameData = async () => {
       try {
         // Find game in supported games first
-        const supportedGame = SUPPORTED_GAMES.find(g => g.slug === gameSlug);
+        const supportedGame = SUPPORTED_GAMES.find(g => g.id === gameSlug);
         if (!supportedGame) {
           notFound();
           return;
@@ -39,10 +39,10 @@ export default function GameTopupPage() {
           setGameData({
             id: supportedGame.id,
             name: supportedGame.name,
-            slug: supportedGame.slug,
+            slug: supportedGame.id,
             logoUrl: supportedGame.logo,
             uidLabel: supportedGame.uidLabel,
-            isActive: supportedGame.isActive,
+            isActive: true,
             createdAt: new Date(),
           });
         }

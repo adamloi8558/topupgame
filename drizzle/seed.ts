@@ -1,294 +1,302 @@
-import { db } from '../src/lib/db';
-import { users, games, products, adminSettings } from '../src/lib/db/schema';
-import { hashPassword } from '../src/lib/auth';
-import { ADMIN_CONFIG, SUPPORTED_GAMES, BANK_INFO } from '../src/lib/constants';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { 
+  users, games, products, orders, orderItems, slips, transactions, adminSettings 
+} from '../src/lib/db/schema';
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 
-async function seed() {
-  console.log('🌱 Starting database seeding...');
+// Database connection
+const connectionString = process.env.DATABASE_URL!;
+const sql = postgres(connectionString);
+const db = drizzle(sql);
 
+async function seedDatabase() {
   try {
+    console.log('🌱 Starting database seeding...');
+
+    // Clear existing data
+    console.log('🗑️ Clearing existing data...');
+    await db.delete(adminSettings);
+    await db.delete(transactions);
+    await db.delete(slips);
+    await db.delete(orderItems);
+    await db.delete(orders);
+    await db.delete(products);
+    await db.delete(games);
+    await db.delete(users);
+
     // Create admin user
-    console.log('👤 Creating admin user...');
     const adminId = uuidv4();
-    const hashedPassword = await hashPassword(ADMIN_CONFIG.password);
-    
+    const hashedAdminPassword = await bcrypt.hash('admin123', 12);
+
     await db.insert(users).values({
       id: adminId,
-      email: ADMIN_CONFIG.email,
-      passwordHash: hashedPassword,
+      email: 'admin@dumstore.com',
       name: 'Admin',
-      points: '1000000.00', // Give admin lots of points for testing
+      passwordHash: hashedAdminPassword,
+      points: '10000',
       role: 'admin',
-      createdAt: new Date(),
-      updatedAt: new Date(),
     });
-    console.log(`✅ Admin user created with email: ${ADMIN_CONFIG.email}`);
 
-    // Create test user
-    console.log('👤 Creating test user...');
-    const testUserId = uuidv4();
-    const testPassword = await hashPassword('password123');
-    
-    await db.insert(users).values({
-      id: testUserId,
-      email: 'user@test.com',
-      passwordHash: testPassword,
-      name: 'Test User',
-      points: '500.00',
-      role: 'user',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    console.log('✅ Test user created with email: user@test.com (password: password123)');
+    // Create test users
+    const userId1 = uuidv4();
+    const userId2 = uuidv4();
+    const hashedUserPassword = await bcrypt.hash('user123', 12);
+
+    await db.insert(users).values([
+      {
+        id: userId1,
+        email: 'user1@gmail.com',
+        name: 'TestUser1',
+        passwordHash: hashedUserPassword,
+        points: '500',
+        role: 'user',
+      },
+      {
+        id: userId2,
+        email: 'user2@gmail.com',
+        name: 'TestUser2',
+        passwordHash: hashedUserPassword,
+        points: '1000',
+        role: 'user',
+      },
+    ]);
 
     // Create games
-    console.log('🎮 Creating games...');
-    const gameIds: Record<string, string> = {};
-    
-    for (const game of SUPPORTED_GAMES) {
-      const gameId = uuidv4();
-      gameIds[game.slug] = gameId;
-      
-      await db.insert(games).values({
-        id: gameId,
-        name: game.name,
-        slug: game.slug,
-        logoUrl: game.logo,
-        uidLabel: game.uidLabel,
-        isActive: game.isActive,
-        createdAt: new Date(),
-      });
-      console.log(`✅ Game created: ${game.name}`);
-    }
-
-    // Create sample products
-    console.log('📦 Creating sample products...');
-    
-    // ROV Products
-    const rovProducts = [
+    await db.insert(games).values([
       {
-        title: 'บัญชี ROV แรงค์ Master ⭐',
-        description: 'บัญชี ROV แรงค์ Master มีสกิน 50+ ตัว รวมสกิน Limited Edition หลายตัว เล่นได้ทันที',
-        rank: 'Master',
-        skinsCount: 52,
-        price: 1500,
-        images: ['/products/rov-master-1.jpg', '/products/rov-master-2.jpg'],
-        accountData: {
-          username: 'rov_master_001',
-          password: 'secure123',
-          email: 'rov1@gameacc.com',
-          additionalInfo: 'มีสกิน Murad Dragon Hunter, Nakroth Dark Slayer',
-        },
+        id: 'valorant',
+        name: 'VALORANT',
+        slug: 'valorant',
+        logoUrl: 'https://logos-download.com/wp-content/uploads/2021/01/Valorant_Logo_Riot_Games.png',
+        uidLabel: 'Riot ID',
+        isActive: true,
       },
       {
-        title: 'บัญชี ROV แรงค์ Diamond 💎',
-        description: 'บัญชี ROV แรงค์ Diamond มีสกิน 30+ ตัว เหมาะสำหรับการเริ่มต้น',
-        rank: 'Diamond',
-        skinsCount: 35,
-        price: 800,
-        images: ['/products/rov-diamond-1.jpg'],
-        accountData: {
-          username: 'rov_diamond_001',
-          password: 'secure456',
-          email: 'rov2@gameacc.com',
-          additionalInfo: 'มีสกิน Violet Cyberpunk, Hayate Shogun',
-        },
+        id: 'rov',
+        name: 'RoV',
+        slug: 'rov',
+        logoUrl: 'https://bacidea.com/wp-content/uploads/2019/07/RoV-New-Era-9_Logo.jpg',
+        uidLabel: 'Player ID',
+        isActive: true,
       },
-    ];
+    ]);
 
-    for (const product of rovProducts) {
-      await db.insert(products).values({
-        id: uuidv4(),
-        gameId: gameIds['rov'],
-        title: product.title,
-        description: product.description,
-        rank: product.rank,
-        skinsCount: product.skinsCount,
-        price: product.price.toString(),
-        images: product.images,
-        accountData: product.accountData,
-        isSold: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    }
+    // Create products
+    const productIds = {
+      val1: uuidv4(),
+      val2: uuidv4(),
+      rov1: uuidv4(),
+      rov2: uuidv4(),
+    };
 
-    // Free Fire Products
-    const freeFireProducts = [
+    await db.insert(products).values([
       {
-        title: 'บัญชี Free Fire แรงค์ Grandmaster 🔥',
-        description: 'บัญชี Free Fire แรงค์ Grandmaster มีสกิน 40+ ตัว รวมสกิน Evo และ Bundle',
-        rank: 'Grandmaster',
-        skinsCount: 45,
-        price: 2000,
-        images: ['/products/ff-grandmaster-1.jpg'],
-        accountData: {
-          username: 'ff_grandmaster_001',
-          password: 'secure789',
-          email: 'ff1@gameacc.com',
-          additionalInfo: 'มี Bundle Shirou, Dragon AK, Golden M1014',
-        },
-      },
-      {
-        title: 'บัญชี Free Fire แรงค์ Diamond 💎',
-        description: 'บัญชี Free Fire แรงค์ Diamond มีสกิน 25+ ตัว เล่นได้ทันที',
-        rank: 'Diamond',
-        skinsCount: 28,
-        price: 1200,
-        images: ['/products/ff-diamond-1.jpg'],
-        accountData: {
-          username: 'ff_diamond_001',
-          password: 'secure101',
-          email: 'ff2@gameacc.com',
-          additionalInfo: 'มี Bundle Kelly, AK47 Blue Flame',
-        },
-      },
-    ];
-
-    for (const product of freeFireProducts) {
-      await db.insert(products).values({
-        id: uuidv4(),
-        gameId: gameIds['free-fire'],
-        title: product.title,
-        description: product.description,
-        rank: product.rank,
-        skinsCount: product.skinsCount,
-        price: product.price.toString(),
-        images: product.images,
-        accountData: product.accountData,
-        isSold: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    }
-
-    // VALORANT Products
-    const valorantProducts = [
-      {
-        title: 'บัญชี VALORANT แรงค์ Immortal ⚡',
-        description: 'บัญชี VALORANT แรงค์ Immortal มีสกิน Phantom, Vandal และ Knife หลายตัว',
+        id: productIds.val1,
+        gameId: 'valorant',
+        title: 'Valorant Immortal Account - Premium Skins',
+        description: 'บัญชี Valorant แรงค์ Immortal มีสกินหายากและแพง',
         rank: 'Immortal',
         skinsCount: 15,
-        price: 3500,
-        images: ['/products/val-immortal-1.jpg'],
+        price: '3500',
+        images: ['https://logos-download.com/wp-content/uploads/2021/01/Valorant_Logo_Riot_Games.png'],
         accountData: {
-          username: 'val_immortal_001',
-          password: 'secure202',
-          email: 'val1@gameacc.com',
-          additionalInfo: 'มี Prime Vandal, Reaver Phantom, Elderflame Knife',
+          username: 'ValPro001',
+          password: 'SecurePass123',
+          email: 'valpro001@gmail.com',
+          additionalInfo: 'มีสกิน Phantom Elderflame และ Vandal Prime',
         },
+        isSold: false,
       },
       {
-        title: 'บัญชี VALORANT แรงค์ Diamond 💎',
-        description: 'บัญชี VALORANT แรงค์ Diamond มีสกิน Phantom และ Vandal เซต',
-        rank: 'Diamond',
+        id: productIds.val2,
+        gameId: 'valorant',
+        title: 'Valorant Platinum Account - Reaver Collection',
+        description: 'บัญชี Valorant แรงค์ Platinum มีสกิน Reaver Collection',
+        rank: 'Platinum',
         skinsCount: 10,
-        price: 2500,
-        images: ['/products/val-diamond-1.jpg'],
+        price: '2500',
+        images: ['https://logos-download.com/wp-content/uploads/2021/01/Valorant_Logo_Riot_Games.png'],
         accountData: {
-          username: 'val_diamond_001',
-          password: 'secure303',
-          email: 'val2@gameacc.com',
-          additionalInfo: 'มี Prime Phantom, Glitchpop Vandal',
+          username: 'PlatPlayer',
+          password: 'PlatPass456',
+          email: 'platplayer@gmail.com',
+          additionalInfo: 'Reaver Collection ครบชุด',
         },
-      },
-    ];
-
-    for (const product of valorantProducts) {
-      await db.insert(products).values({
-        id: uuidv4(),
-        gameId: gameIds['valorant'],
-        title: product.title,
-        description: product.description,
-        rank: product.rank,
-        skinsCount: product.skinsCount,
-        price: product.price.toString(),
-        images: product.images,
-        accountData: product.accountData,
         isSold: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-    }
+      },
+      {
+        id: productIds.rov1,
+        gameId: 'rov',
+        title: 'RoV Conqueror Account - Full Collection',
+        description: 'บัญชี RoV แรงค์ Conqueror มีสกินและฮีโร่ครบ',
+        rank: 'Conqueror',
+        skinsCount: 50,
+        price: '4200',
+        images: ['https://bacidea.com/wp-content/uploads/2019/07/RoV-New-Era-9_Logo.jpg'],
+        accountData: {
+          username: 'ConquerorKing',
+          password: 'ConquerorPass789',
+          email: 'conqueror@gmail.com',
+          additionalInfo: 'สกินและฮีโร่ครบทุกตัว',
+        },
+        isSold: false,
+      },
+      {
+        id: productIds.rov2,
+        gameId: 'rov',
+        title: 'RoV Diamond Account - Legendary Skins',
+        description: 'บัญชี RoV แรงค์ Diamond มีสกิน Legendary หลายตัว',
+        rank: 'Diamond',
+        skinsCount: 25,
+        price: '2800',
+        images: ['https://bacidea.com/wp-content/uploads/2019/07/RoV-New-Era-9_Logo.jpg'],
+        accountData: {
+          username: 'DiamondHero',
+          password: 'DiamondPass456',
+          email: 'diamond@gmail.com',
+          additionalInfo: 'Legendary Skins หลายตัว',
+        },
+        isSold: false,
+      },
+    ]);
 
-    console.log('✅ Sample products created');
+    // Create orders
+    const orderId1 = uuidv4();
+    const orderId2 = uuidv4();
+
+    await db.insert(orders).values([
+      {
+        id: orderId1,
+        userId: userId1,
+        type: 'topup',
+        status: 'completed',
+        amount: '500',
+        pointsEarned: '500',
+        gameUid: 'TestUser#1234',
+        gameId: 'valorant',
+      },
+      {
+        id: orderId2,
+        userId: userId2,
+        type: 'purchase',
+        status: 'pending',
+        amount: '2500',
+        pointsEarned: '0',
+        gameId: 'valorant',
+      },
+    ]);
+
+    // Create order items
+    await db.insert(orderItems).values([
+      {
+        id: uuidv4(),
+        orderId: orderId2,
+        productId: productIds.val2,
+        price: '2500',
+      },
+    ]);
+
+    // Create slips
+    const slipId1 = uuidv4();
+    const slipId2 = uuidv4();
+
+    await db.insert(slips).values([
+      {
+        id: slipId1,
+        orderId: orderId1,
+        fileUrl: 'https://example.com/slip1.jpg',
+        fileName: 'slip_20240126_001.jpg',
+        status: 'verified',
+        verifiedAt: new Date(),
+      },
+      {
+        id: slipId2,
+        orderId: orderId2,
+        fileUrl: 'https://example.com/slip2.jpg',
+        fileName: 'slip_20240126_002.jpg',
+        status: 'pending',
+      },
+    ]);
+
+    // Create transactions
+    await db.insert(transactions).values([
+      {
+        id: uuidv4(),
+        userId: userId1,
+        type: 'topup',
+        amount: '500',
+        pointsBefore: '0',
+        pointsAfter: '500',
+        referenceId: orderId1,
+        description: 'เติมพ้อย 500 บาท',
+      },
+      {
+        id: uuidv4(),
+        userId: userId2,
+        type: 'topup',
+        amount: '1000',
+        pointsBefore: '0',
+        pointsAfter: '1000',
+        description: 'เติมพ้อย 1000 บาท',
+      },
+    ]);
 
     // Create admin settings
-    console.log('⚙️ Creating admin settings...');
-    const settings = [
-      {
-        key: 'bank_name',
-        value: BANK_INFO.bankName,
-        description: 'ชื่อธนาคารของร้าน',
-      },
-      {
-        key: 'bank_account_name',
-        value: BANK_INFO.accountName,
-        description: 'ชื่อบัญชีธนาคารของร้าน',
-      },
-      {
-        key: 'bank_account_number',
-        value: BANK_INFO.accountNumber,
-        description: 'เลขบัญชีธนาคารของร้าน',
-      },
+    await db.insert(adminSettings).values([
       {
         key: 'site_name',
-        value: 'TopUp Game Store',
+        value: 'DumStore',
         description: 'ชื่อเว็บไซต์',
       },
       {
         key: 'site_description',
-        value: 'เว็บไซต์เติมเกมและขายไอดีเกม อัตโนมัติ ปลอดภัย',
+        value: 'เว็บไซต์เติมเกมและขายไอดีเกมออนไลน์',
         description: 'คำอธิบายเว็บไซต์',
       },
       {
-        key: 'maintenance_mode',
-        value: 'false',
-        description: 'โหมดปิดปรับปรุงระบบ',
+        key: 'contact_email',
+        value: 'support@dumstore.com',
+        description: 'อีเมลติดต่อ',
       },
       {
-        key: 'auto_verify_slips',
-        value: 'true',
-        description: 'เปิดใช้งานการตรวจสอบสลิปอัตโนมัติ',
+        key: 'bank_name',
+        value: 'กรุงไทย',
+        description: 'ชื่อธนาคาร',
       },
-    ];
+      {
+        key: 'bank_account_number',
+        value: '6645533950',
+        description: 'เลขที่บัญชี',
+      },
+      {
+        key: 'bank_account_name',
+        value: 'ฐาปนพงษ์ เดชยศดี',
+        description: 'ชื่อบัญชี',
+      },
+      {
+        key: 'easyslip_access_token',
+        value: 'your-easyslip-token',
+        description: 'EasySlip API Token',
+      },
+    ]);
 
-    for (const setting of settings) {
-      await db.insert(adminSettings).values({
-        key: setting.key,
-        value: setting.value,
-        description: setting.description,
-        updatedAt: new Date(),
-      });
-    }
+    console.log('✅ Database seeding completed successfully!');
+    console.log('📧 Admin login: admin@dumstore.com / admin123');
+    console.log('👤 Test users: user1@gmail.com, user2@gmail.com / user123');
 
-    console.log('✅ Admin settings created');
-
-    console.log('🎉 Database seeding completed successfully!');
-    console.log('\n📝 Login Credentials:');
-    console.log(`Admin: ${ADMIN_CONFIG.email} / ${ADMIN_CONFIG.password}`);
-    console.log('User: user@test.com / password123');
-    console.log('\n🎮 Games created:', SUPPORTED_GAMES.length);
-    console.log('📦 Products created:', rovProducts.length + freeFireProducts.length + valorantProducts.length);
-    
   } catch (error) {
     console.error('❌ Error seeding database:', error);
     throw error;
+  } finally {
+    await sql.end();
   }
 }
 
-// Run seed if called directly
+// Run the seed function
 if (require.main === module) {
-  seed()
-    .then(() => {
-      console.log('✅ Seeding finished');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('❌ Seeding failed:', error);
-      process.exit(1);
-    });
+  seedDatabase();
 }
 
-export { seed }; 
+export default seedDatabase; 

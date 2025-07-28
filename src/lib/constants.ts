@@ -1,24 +1,54 @@
 // App Configuration
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'DumStore';
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-export const APP_DESCRIPTION = 'เว็บไซต์เติมเกมและขายไอดีเกม อัตโนมัติ ปลอดภัย - DumStore';
+export const APP_NAME = 'DumStore';
+export const APP_DESCRIPTION = 'เว็บไซต์เติมเกมและขายไอดีเกมออนไลน์ - DumStore';
+export const APP_VERSION = '1.0.0';
 
-// Database Configuration
-export const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost:5432/topupgame';
-
-// JWT Configuration
-export const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-at-least-32-characters-long';
-export const JWT_EXPIRY = '7d';
+// API Configuration
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+export const API_TIMEOUT = 10000; // 10 seconds
 
 // File Upload Configuration
+export const FILE_UPLOAD = {
+  MAX_SIZE: 5 * 1024 * 1024, // 5MB
+  ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
+};
+
+// File Upload Legacy Constants (for backward compatibility)
 export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-export const ALLOWED_FILE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
-export const FILE_UPLOAD = {
-  maxFileSize: MAX_FILE_SIZE,
-  allowedTypes: ALLOWED_IMAGE_TYPES,
-  allowedExtensions: ALLOWED_FILE_EXTENSIONS,
+// Bank Information
+export const BANK_INFO = {
+  bankName: 'กรุงไทย',
+  accountName: 'ฐาปนพงษ์ เดชยศดี',
+  accountNumber: '6645533950',
+  branchName: 'สาขาท่าพระ',
+};
+
+// Rate Limiting Configuration
+export const RATE_LIMITS = {
+  REGISTER: {
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
+  LOGIN: {
+    maxRequests: 10,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
+  UPLOAD: {
+    maxRequests: 20,
+    windowMs: 60 * 1000, // 1 minute
+  },
+  API: {
+    maxRequests: 100,
+    windowMs: 15 * 60 * 1000, // 15 minutes
+  },
+};
+
+// JWT Configuration
+export const JWT_CONFIG = {
+  secret: process.env.JWT_SECRET || 'super-secret-jwt-key-for-development-only-minimum-32-chars',
+  expiresIn: '7d',
 };
 
 // Cloudflare R2 Configuration
@@ -28,6 +58,7 @@ export const CLOUDFLARE_R2_CONFIG = {
   secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '',
   bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME || 'topupgame-files',
   publicUrl: process.env.CLOUDFLARE_R2_PUBLIC_URL || 'https://your-bucket.r2.dev',
+  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT || '',
 };
 
 // EasySlip API Configuration
@@ -36,71 +67,139 @@ export const EASYSLIP_CONFIG = {
   accessToken: process.env.EASYSLIP_ACCESS_TOKEN || '',
 };
 
-// Bank Information
-export const BANK_INFO = {
-  bankName: process.env.SHOP_BANK_NAME || 'ธนาคารกสิกรไทย',
-  accountName: process.env.SHOP_BANK_ACCOUNT_NAME || 'ร้านเติมเกม',
-  accountNumber: process.env.SHOP_BANK_ACCOUNT_NUMBER || '123-456-7890',
-};
+// Navigation
+export const NAVIGATION_ITEMS = [
+  { label: 'หน้าแรก', href: '/', icon: 'Home' },
+  { label: 'เติมพ้อย', href: '/topup', icon: 'Wallet' },
+  { label: 'ร้านค้า', href: '/shop', icon: 'ShoppingBag' },
+  { label: 'ประวัติ', href: '/history', icon: 'History' },
+];
 
-// Admin Configuration
-export const ADMIN_CONFIG = {
-  email: process.env.ADMIN_EMAIL || 'admin@topupgame.com',
-  password: process.env.ADMIN_PASSWORD || 'admin123456',
-};
-
-// Game Configuration
-export const SUPPORTED_GAMES = [
-  {
-    id: 'rov',
-    name: 'RoV (Arena of Valor)',
-    slug: 'rov',
-    uidLabel: 'UID',
-    logo: '/game-icons/rov.png',
-    isActive: true,
+// Admin Navigation
+export const ADMIN_NAVIGATION = [
+  { 
+    label: 'ภาพรวม', 
+    href: '/admin', 
+    icon: 'BarChart3',
+    description: 'ดูสถิติและข้อมูลสำคัญ'
   },
-  {
-    id: 'free-fire',
-    name: 'Free Fire',
-    slug: 'free-fire',
-    uidLabel: 'Player ID',
-    logo: '/game-icons/free-fire.png',
-    isActive: true,
+  { 
+    label: 'ผู้ใช้', 
+    href: '/admin/users', 
+    icon: 'Users',
+    description: 'จัดการผู้ใช้และสิทธิ์'
   },
-  {
-    id: 'valorant',
-    name: 'VALORANT',
-    slug: 'valorant',
-    uidLabel: 'Riot ID',
-    logo: '/game-icons/valorant.png',
-    isActive: true,
+  { 
+    label: 'คำสั่งซื้อ', 
+    href: '/admin/orders', 
+    icon: 'ShoppingCart',
+    description: 'ดูและจัดการคำสั่งซื้อ'
   },
-  {
-    id: 'pubg',
-    name: 'PUBG Mobile',
-    slug: 'pubg',
-    uidLabel: 'Character ID',
-    logo: '/game-icons/pubg.png',
-    isActive: true,
+  { 
+    label: 'สินค้า', 
+    href: '/admin/products', 
+    icon: 'Package',
+    description: 'จัดการสินค้าและไอดีเกม'
   },
-  {
-    id: 'lol',
-    name: 'League of Legends',
-    slug: 'lol',
-    uidLabel: 'Summoner Name',
-    logo: '/game-icons/lol.png',
-    isActive: true,
+  { 
+    label: 'สลิป', 
+    href: '/admin/slips', 
+    icon: 'FileText',
+    description: 'ตรวจสอบสลิปการโอนเงิน'
+  },
+  { 
+    label: 'รายงาน', 
+    href: '/admin/analytics', 
+    icon: 'TrendingUp',
+    description: 'ดูรายงานและสถิติ'
+  },
+  { 
+    label: 'ตั้งค่า', 
+    href: '/admin/settings', 
+    icon: 'Settings',
+    description: 'ตั้งค่าระบบและการกำหนดค่า'
   },
 ];
 
-// Top-up Amounts
+// Footer Links
+export const FOOTER_LINKS = {
+  company: [
+    { label: 'เกี่ยวกับเรา', href: '/about' },
+    { label: 'ติดต่อเรา', href: '/contact' },
+    { label: 'ร่วมงานกับเรา', href: '/careers' },
+  ],
+  support: [
+    { label: 'วิธีการใช้งาน', href: '/help' },
+    { label: 'คำถามที่พบบ่อย', href: '/faq' },
+    { label: 'แจ้งปัญหา', href: '/support' },
+  ],
+  legal: [
+    { label: 'นโยบายความเป็นส่วนตัว', href: '/privacy' },
+    { label: 'ข้อกำหนดการใช้งาน', href: '/terms' },
+    { label: 'คำแถลงความรับผิดชอบ', href: '/disclaimer' },
+  ],
+};
+
+// Social Media Links
+export const SOCIAL_LINKS = {
+  facebook: 'https://facebook.com/dumstore',
+  twitter: 'https://twitter.com/dumstore',
+  instagram: 'https://instagram.com/dumstore',
+  discord: 'https://discord.gg/dumstore',
+  line: 'https://line.me/ti/p/@dumstore',
+};
+
+// Supported Games
+export const SUPPORTED_GAMES = [
+  {
+    id: 'valorant',
+    name: 'VALORANT',
+    shortName: 'VAL',
+    description: 'เกม FPS ยุทธวิธีจาก Riot Games',
+    logo: 'https://logos-download.com/wp-content/uploads/2021/01/Valorant_Logo_Riot_Games.png',
+    uidLabel: 'Riot ID',
+    topupEnabled: true,
+    accountSaleEnabled: true,
+    minTopup: 50,
+    maxTopup: 10000,
+  },
+  {
+    id: 'rov',
+    name: 'RoV',
+    shortName: 'ROV',
+    description: 'เกม MOBA ยอดนิยมในไทย',
+    logo: 'https://bacidea.com/wp-content/uploads/2019/07/RoV-New-Era-9_Logo.jpg',
+    uidLabel: 'Player ID',
+    topupEnabled: true,
+    accountSaleEnabled: true,
+    minTopup: 20,
+    maxTopup: 5000,
+  },
+];
+
+// Game Ranks
+export const GAME_RANKS = [
+  // Valorant Ranks
+  { game: 'valorant', rank: 'Bronze', order: 1 },
+  { game: 'valorant', rank: 'Gold', order: 2 },
+  { game: 'valorant', rank: 'Platinum', order: 3 },
+  { game: 'valorant', rank: 'Immortal', order: 4 },
+  
+  // ROV Ranks
+  { game: 'rov', rank: 'Gold', order: 1 },
+  { game: 'rov', rank: 'Silver', order: 2 },
+  { game: 'rov', rank: 'Diamond', order: 3 },
+  { game: 'rov', rank: 'Conqueror', order: 4 },
+];
+
+// Top-up Packages
 export const TOPUP_AMOUNTS = [
   { value: 50, label: '50 บาท', bonus: 0 },
   { value: 100, label: '100 บาท', bonus: 5 },
-  { value: 300, label: '300 บาท', bonus: 20 },
+  { value: 200, label: '200 บาท', bonus: 15 },
   { value: 500, label: '500 บาท', bonus: 50 },
-  { value: 1000, label: '1,000 บาท', bonus: 150 },
-  { value: 2000, label: '2,000 บาท', bonus: 400 },
+  { value: 1000, label: '1,000 บาท', bonus: 120 },
+  { value: 2000, label: '2,000 บาท', bonus: 300 },
 ];
 
 // Order Status
@@ -112,46 +211,13 @@ export const ORDER_STATUS = {
   CANCELLED: 'cancelled',
 } as const;
 
+// Order Status Labels
 export const ORDER_STATUS_LABELS = {
-  [ORDER_STATUS.PENDING]: 'รอดำเนินการ',
-  [ORDER_STATUS.PROCESSING]: 'กำลังดำเนินการ',
-  [ORDER_STATUS.COMPLETED]: 'สำเร็จ',
-  [ORDER_STATUS.FAILED]: 'ล้มเหลว',
-  [ORDER_STATUS.CANCELLED]: 'ยกเลิก',
-};
-
-export const ORDER_STATUS_COLORS = {
-  [ORDER_STATUS.PENDING]: 'text-yellow-400 bg-yellow-400/10',
-  [ORDER_STATUS.PROCESSING]: 'text-blue-400 bg-blue-400/10',
-  [ORDER_STATUS.COMPLETED]: 'text-neon-green bg-neon-green/10',
-  [ORDER_STATUS.FAILED]: 'text-red-400 bg-red-400/10',
-  [ORDER_STATUS.CANCELLED]: 'text-gray-400 bg-gray-400/10',
-};
-
-// Slip Status
-export const SLIP_STATUS = {
-  PENDING: 'pending',
-  VERIFIED: 'verified',
-  REJECTED: 'rejected',
-  DUPLICATE: 'duplicate',
-} as const;
-
-export const SLIP_STATUS_LABELS = {
-  [SLIP_STATUS.PENDING]: 'รอตรวจสอบ',
-  [SLIP_STATUS.VERIFIED]: 'ตรวจสอบแล้ว',
-  [SLIP_STATUS.REJECTED]: 'ถูกปฏิเสธ',
-  [SLIP_STATUS.DUPLICATE]: 'สลิปซ้ำ',
-};
-
-// User Roles
-export const USER_ROLES = {
-  USER: 'user',
-  ADMIN: 'admin',
-} as const;
-
-export const USER_ROLE_LABELS = {
-  [USER_ROLES.USER]: 'ผู้ใช้',
-  [USER_ROLES.ADMIN]: 'แอดมิน',
+  pending: 'รอดำเนินการ',
+  processing: 'กำลังดำเนินการ', 
+  completed: 'สำเร็จ',
+  failed: 'ล้มเหลว',
+  cancelled: 'ยกเลิก',
 };
 
 // Transaction Types
@@ -159,223 +225,91 @@ export const TRANSACTION_TYPES = {
   TOPUP: 'topup',
   PURCHASE: 'purchase',
   REFUND: 'refund',
+  ADJUSTMENT: 'adjustment',
 } as const;
 
+// Transaction Type Labels
 export const TRANSACTION_TYPE_LABELS = {
-  [TRANSACTION_TYPES.TOPUP]: 'เติมพ้อย',
-  [TRANSACTION_TYPES.PURCHASE]: 'ซื้อสินค้า',
-  [TRANSACTION_TYPES.REFUND]: 'คืนเงิน',
+  topup: 'เติมพ้อย',
+  purchase: 'ซื้อสินค้า',
+  refund: 'คืนเงิน',
+  adjustment: 'ปรับปรุง',
 };
 
-// Rate Limiting
-export const RATE_LIMITS = {
-  LOGIN: {
-    maxRequests: 5,
-    windowMs: 15 * 60 * 1000, // 15 minutes
-  },
-  REGISTER: {
-    maxRequests: 10,
-    windowMs: 15 * 60 * 1000, // 15 minutes
-  },
-  UPLOAD: {
-    maxRequests: 10,
-    windowMs: 60 * 60 * 1000, // 1 hour
-  },
-  API: {
-    maxRequests: 100,
-    windowMs: 15 * 60 * 1000, // 15 minutes
-  },
+// Slip Status
+export const SLIP_STATUS = {
+  PENDING: 'pending',
+  PROCESSING: 'processing',
+  VERIFIED: 'verified',
+  REJECTED: 'rejected',
+} as const;
+
+// Slip Status Labels
+export const SLIP_STATUS_LABELS = {
+  pending: 'รอตรวจสอบ',
+  processing: 'กำลังตรวจสอบ',
+  verified: 'ตรวจสอบแล้ว',
+  rejected: 'ถูกปฏิเสธ',
 };
 
 // Pagination
 export const PAGINATION = {
   DEFAULT_PAGE: 1,
-  DEFAULT_LIMIT: 10,
+  DEFAULT_LIMIT: 12,
   MAX_LIMIT: 100,
 };
 
-// Game Ranks (for different games)
-export const GAME_RANKS_BY_GAME = {
-  rov: [
-    'Bronze',
-    'Silver',
-    'Gold',
-    'Platinum',
-    'Diamond',
-    'Master',
-    'Grandmaster',
-    'Challenger',
-  ],
-  valorant: [
-    'Iron',
-    'Bronze',
-    'Silver',
-    'Gold',
-    'Platinum',
-    'Diamond',
-    'Ascendant',
-    'Immortal',
-    'Radiant',
-  ],
-  lol: [
-    'Iron',
-    'Bronze',
-    'Silver',
-    'Gold',
-    'Platinum',
-    'Diamond',
-    'Master',
-    'Grandmaster',
-    'Challenger',
-  ],
+// Currency
+export const CURRENCY = {
+  SYMBOL: '฿',
+  CODE: 'THB',
+  NAME: 'บาท',
 };
 
-// All available ranks (unique)
-export const GAME_RANKS = [
-  'Iron',
-  'Bronze',
-  'Silver', 
-  'Gold',
-  'Platinum',
-  'Diamond',
-  'Master',
-  'Grandmaster',
-  'Challenger',
-  'Ascendant',
-  'Immortal',
-  'Radiant',
-];
+// Time Format
+export const TIME_FORMAT = {
+  DATE: 'dd/MM/yyyy',
+  TIME: 'HH:mm',
+  DATETIME: 'dd/MM/yyyy HH:mm',
+  FULL: 'dd/MM/yyyy HH:mm:ss',
+};
 
 // Error Messages
 export const ERROR_MESSAGES = {
-  NETWORK_ERROR: 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่',
-  UNAUTHORIZED: 'กรุณาเข้าสู่ระบบก่อนใช้งาน',
-  FORBIDDEN: 'คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้',
+  NETWORK_ERROR: 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง',
+  SERVER_ERROR: 'เกิดข้อผิดพลาดในระบบ กรุณาลองใหม่ภายหลัง',
+  UNAUTHORIZED: 'คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้',
+  FORBIDDEN: 'การเข้าถึงถูกปฏิเสธ',
   NOT_FOUND: 'ไม่พบข้อมูลที่ต้องการ',
   VALIDATION_ERROR: 'ข้อมูลที่กรอกไม่ถูกต้อง',
-  SERVER_ERROR: 'เกิดข้อผิดพลาดของเซิร์ฟเวอร์ กรุณาลองใหม่ภายหลัง',
+  DUPLICATE_ERROR: 'ข้อมูลนี้มีอยู่ในระบบแล้ว',
+  RATE_LIMIT: 'คำขอมากเกินไป กรุณารอสักครู่แล้วลองใหม่',
+  INVALID_SLIP: 'สลิปไม่ถูกต้องหรือไม่สามารถอ่านได้',
+  DUPLICATE_SLIP: 'สลิปนี้ถูกใช้งานแล้ว',
+  INVALID_FILE_TYPE: 'ประเภทไฟล์ไม่ถูกต้อง รองรับเฉพาะ JPG, PNG, WEBP',
   FILE_TOO_LARGE: 'ไฟล์มีขนาดใหญ่เกินไป',
-  INVALID_FILE_TYPE: 'ประเภทไฟล์ไม่ถูกต้อง',
-  DUPLICATE_SLIP: 'สลิปนี้ถูกใช้งานแล้ว กรุณาตรวจสอบ',
-  INVALID_SLIP: 'ไฟล์สลิปไม่ถูกต้อง กรุณาอัปโหลดใหม่',
-  INSUFFICIENT_POINTS: 'พ้อยไม่เพียงพอ กรุณาเติมพ้อยก่อน',
-  PRODUCT_OUT_OF_STOCK: 'สินค้าหมด กรุณาเลือกสินค้าอื่น',
-  BANK_ACCOUNT_MISMATCH: 'บัญชีปลายทางในสลิปไม่ตรงกับบัญชีร้าน',
+  BANK_ACCOUNT_MISMATCH: 'บัญชีปลายทางไม่ตรงกับบัญชีของร้าน',
 };
 
 // Success Messages
 export const SUCCESS_MESSAGES = {
-  LOGIN_SUCCESS: 'เข้าสู่ระบบสำเร็จ',
+  LOGIN: 'เข้าสู่ระบบสำเร็จ',
+  LOGOUT: 'ออกจากระบบสำเร็จ',
+  REGISTER: 'สมัครสมาชิกสำเร็จ',
   REGISTER_SUCCESS: 'สมัครสมาชิกสำเร็จ',
-  LOGOUT_SUCCESS: 'ออกจากระบบสำเร็จ',
-  PROFILE_UPDATED: 'อัปเดตโปรไฟล์สำเร็จ',
-  PASSWORD_CHANGED: 'เปลี่ยนรหัสผ่านสำเร็จ',
+  UPDATE_PROFILE: 'อัปเดตโปรไฟล์สำเร็จ',
+  CHANGE_PASSWORD: 'เปลี่ยนรหัสผ่านสำเร็จ',
   ORDER_CREATED: 'สร้างคำสั่งซื้อสำเร็จ',
   PAYMENT_SUCCESS: 'ชำระเงินสำเร็จ',
-  SLIP_UPLOADED: 'อัปโหลดสลิปสำเร็จ รอการตรวจสอบ',
+  SLIP_UPLOADED: 'อัปโหลดสลิปสำเร็จ',
   TOPUP_SUCCESS: 'เติมพ้อยสำเร็จ',
-  PURCHASE_SUCCESS: 'ซื้อสินค้าสำเร็จ',
-  PRODUCT_ADDED: 'เพิ่มสินค้าสำเร็จ',
-  PRODUCT_UPDATED: 'อัปเดตสินค้าสำเร็จ',
-  PRODUCT_DELETED: 'ลบสินค้าสำเร็จ',
 };
 
-// API Endpoints
-export const API_ENDPOINTS = {
-  // Auth
-  LOGIN: '/api/auth/login',
-  REGISTER: '/api/auth/register',
-  LOGOUT: '/api/auth/logout',
-  ME: '/api/auth/me',
-  
-  // Users
-  PROFILE: '/api/users/profile',
-  POINTS: '/api/users/points',
-  TRANSACTIONS: '/api/users/transactions',
-  
-  // Games
-  GAMES: '/api/games',
-  GAME_DETAIL: '/api/games',
-  
-  // Products
-  PRODUCTS: '/api/products',
-  PRODUCT_DETAIL: '/api/products',
-  PRODUCT_CATEGORIES: '/api/products/categories',
-  
-  // Orders
-  ORDERS: '/api/orders',
-  ORDER_DETAIL: '/api/orders',
-  TOPUP_ORDER: '/api/orders/topup',
-  PURCHASE_ORDER: '/api/orders/purchase',
-  CANCEL_ORDER: '/api/orders',
-  
-  // Slips
-  UPLOAD_SLIP: '/api/slips/upload',
-  VERIFY_SLIP: '/api/slips/verify',
-  SLIP_DETAIL: '/api/slips',
-  
-  // File Upload
-  UPLOAD_IMAGE: '/api/upload/image',
-  DELETE_FILE: '/api/upload',
-  
-  // Admin
-  ADMIN_ORDERS: '/api/admin/orders',
-  ADMIN_USERS: '/api/admin/users',
-  ADMIN_PRODUCTS: '/api/admin/products',
-  ADMIN_ANALYTICS: '/api/admin/analytics',
-  
-  // EasySlip
-  EASYSLIP_VERIFY: '/api/easyslip/verify',
-  EASYSLIP_STATUS: '/api/easyslip/status',
-};
-
-// Navigation Menu
-export const NAVIGATION_ITEMS = [
-  { label: 'หน้าแรก', href: '/', icon: 'Home' },
-  { label: 'เติมพ้อย', href: '/topup', icon: 'Wallet' },
-  { label: 'ร้านค้า', href: '/shop', icon: 'ShoppingBag' },
-  { label: 'ประวัติ', href: '/history', icon: 'History' },
-];
-
-export const ADMIN_NAVIGATION_ITEMS = [
-  { label: 'แดชบอร์ด', href: '/admin', icon: 'BarChart3' },
-  { label: 'คำสั่งซื้อ', href: '/admin/orders', icon: 'ShoppingCart' },
-  { label: 'สินค้า', href: '/admin/products', icon: 'Package' },
-  { label: 'ผู้ใช้', href: '/admin/users', icon: 'Users' },
-  { label: 'วิเคราะห์', href: '/admin/analytics', icon: 'TrendingUp' },
-];
-
-// Social Links
-export const SOCIAL_LINKS = [
-  { label: 'Facebook', href: '#', icon: 'Facebook' },
-  { label: 'Line', href: '#', icon: 'MessageCircle' },
-  { label: 'Discord', href: '#', icon: 'Hash' },
-];
-
-// Footer Links
-export const FOOTER_LINKS = [
-  {
-    title: 'บริการ',
-    links: [
-      { label: 'เติมพ้อยเกม', href: '/topup' },
-      { label: 'ขายไอดีเกม', href: '/shop' },
-      { label: 'วิธีการใช้งาน', href: '/guide' },
-    ],
-  },
-  {
-    title: 'ช่วยเหลือ',
-    links: [
-      { label: 'คำถามที่พบบ่อย', href: '/faq' },
-      { label: 'ติดต่อเรา', href: '/contact' },
-      { label: 'แจ้งปัญหา', href: '/support' },
-    ],
-  },
-  {
-    title: 'นโยบาย',
-    links: [
-      { label: 'เงื่อนไขการใช้งาน', href: '/terms' },
-      { label: 'นโยบายความเป็นส่วนตัว', href: '/privacy' },
-      { label: 'นโยบายการคืนเงิน', href: '/refund' },
-    ],
-  },
-]; 
+// Regex Patterns
+export const REGEX_PATTERNS = {
+  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  PHONE: /^[0-9]{10}$/,
+  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+  USERNAME: /^[a-zA-Z0-9_]{3,20}$/,
+  GAME_UID: /^[a-zA-Z0-9_#-]{3,30}$/,
+}; 

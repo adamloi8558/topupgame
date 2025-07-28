@@ -69,7 +69,7 @@ export function AdminSidebar() {
           </div>
           <div>
             <h1 className="font-bold text-lg">Admin Panel</h1>
-            <p className="text-xs text-muted-foreground">TopUp Game Store</p>
+                            <p className="text-xs text-muted-foreground">DumStore</p>
           </div>
         </Link>
 

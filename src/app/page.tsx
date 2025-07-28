@@ -266,13 +266,13 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-neon-green/20 py-8 px-4">
         <div className="container mx-auto text-center">
-          <div className="text-2xl font-bold text-gradient mb-4">TopUp Game Store</div>
-          <p className="text-muted-foreground mb-4">
-            เว็บไซต์เติมเกมและขายไอดีเกม อัตโนมัติ ปลอดภัย
+          <div className="text-2xl font-bold text-gradient mb-4">DumStore</div>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            เว็บไซต์เติมเกมและขายไอดีเกม ที่ดีที่สุด
           </p>
-          <div className="text-sm text-muted-foreground">
-            © 2024 TopUp Game Store. สงวนลิขสิทธิ์.
-          </div>
+          <p className="text-sm text-muted-foreground">
+            © 2024 DumStore. สงวนลิขสิทธิ์.
+          </p>
         </div>
       </footer>
     </div>

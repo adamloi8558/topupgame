@@ -30,27 +30,39 @@ export default function ShopPage() {
             </p>
           </div>
           
-          {/* Cart Button */}
-          <Button
-            onClick={toggleCart}
-            variant="gaming"
-            className="relative"
-          >
-            <ShoppingCart className="h-5 w-5 mr-2" />
-            ตะกร้า
-            {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-neon-green text-gaming-dark text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </Button>
+          {/* Mobile Filter Toggle */}
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="lg:hidden"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              ตัวกรอง
+            </Button>
+            
+            {/* Cart Button */}
+            <Button
+              onClick={toggleCart}
+              variant="gaming"
+              className="relative"
+            >
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              ตะกร้า
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-neon-green text-gaming-dark text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
+          <div className={`lg:col-span-1 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
             <div className="sticky top-8">
-              <ShopFilters
+              <ShopFilters 
                 filters={filters}
                 onFiltersChange={setFilters}
               />

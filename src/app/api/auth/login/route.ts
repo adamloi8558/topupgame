@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     const response: ApiResponse<AuthUser> = {
       success: true,
       data: authUser,
-      message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
+      message: SUCCESS_MESSAGES.LOGIN,
     };
 
     const nextResponse = NextResponse.json(response);

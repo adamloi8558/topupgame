@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ProductCard } from './product-card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
-import { ProductWithGame, ProductFilters, PaginatedResponse, ApiResponse } from '@/types';
+import { ProductWithGame, ProductFilters } from '@/types';
 import { PAGINATION } from '@/lib/constants';
 import { ChevronLeft, ChevronRight, Package } from 'lucide-react';
 
@@ -47,18 +47,26 @@ export function ProductGrid({ filters, className }: ProductGridProps) {
       if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
 
       const response = await fetch(`/api/products?${params.toString()}`);
-      const result: ApiResponse<PaginatedResponse<ProductWithGame>> = await response.json();
+      const result = await response.json();
 
       if (result.success && result.data) {
-        setProducts(result.data.data);
+        // Updated to match our mock API structure
+        const productsList = result.data.products || [];
+        const paginationData = result.data.pagination || {};
+        
+        setProducts(productsList);
         setPagination(prev => ({
           ...prev,
-          total: result.data!.pagination.total,
-          totalPages: result.data!.pagination.totalPages,
+          total: paginationData.total || 0,
+          totalPages: paginationData.totalPages || 0,
         }));
+      } else {
+        console.error('Failed to fetch products:', result.error);
+        setProducts([]);
       }
     } catch (error) {
-      console.error('Failed to fetch products:', error);
+      console.error('Error fetching products:', error);
+      setProducts([]);
     } finally {
       setIsLoading(false);
     }
@@ -67,37 +75,22 @@ export function ProductGrid({ filters, className }: ProductGridProps) {
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       setPagination(prev => ({ ...prev, page: newPage }));
-      // Scroll to top when changing pages
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const generatePageNumbers = () => {
     const pages = [];
-    const { page, totalPages } = pagination;
+    const maxVisible = 5;
+    let start = Math.max(1, pagination.page - Math.floor(maxVisible / 2));
+    let end = Math.min(pagination.totalPages, start + maxVisible - 1);
     
-    // Always show first page
-    if (totalPages > 0) pages.push(1);
-    
-    // Show pages around current page
-    const start = Math.max(2, page - 2);
-    const end = Math.min(totalPages - 1, page + 2);
-    
-    // Add ellipsis if needed
-    if (start > 2) pages.push('...');
-    
-    // Add middle pages
-    for (let i = start; i <= end; i++) {
-      if (i !== 1 && i !== totalPages) {
-        pages.push(i);
-      }
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
     }
     
-    // Add ellipsis if needed
-    if (end < totalPages - 1) pages.push('...');
-    
-    // Always show last page
-    if (totalPages > 1) pages.push(totalPages);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
     
     return pages;
   };
@@ -110,7 +103,8 @@ export function ProductGrid({ filters, className }: ProductGridProps) {
     );
   }
 
-  if (products.length === 0) {
+  // Add safety check for products array
+  if (!products || products.length === 0) {
     return (
       <div className="text-center py-12">
         <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -136,47 +130,51 @@ export function ProductGrid({ filters, className }: ProductGridProps) {
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-2">
-          {/* Previous Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          {/* Page Numbers */}
-          {generatePageNumbers().map((pageNum, index) => (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-muted-foreground">
+            แสดง {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} จาก {pagination.total} รายการ
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {/* Previous Button */}
             <Button
-              key={index}
-              variant={pageNum === pagination.page ? "gaming" : "outline"}
+              variant="outline"
               size="sm"
-              onClick={() => typeof pageNum === 'number' && handlePageChange(pageNum)}
-              disabled={pageNum === '...'}
-              className={pageNum === '...' ? 'cursor-default' : ''}
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page <= 1}
             >
-              {pageNum}
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              ก่อนหน้า
             </Button>
-          ))}
 
-          {/* Next Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.totalPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            {/* Page Numbers */}
+            <div className="flex space-x-1">
+              {generatePageNumbers().map((pageNum) => (
+                <Button
+                  key={pageNum}
+                  variant={pageNum === pagination.page ? "gaming" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(pageNum)}
+                  className="w-10"
+                >
+                  {pageNum}
+                </Button>
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages}
+            >
+              ถัดไป
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
       )}
-
-      {/* Results Info */}
-      <div className="text-center mt-4 text-sm text-muted-foreground">
-        แสดง {((pagination.page - 1) * pagination.limit) + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} จาก {pagination.total} รายการ
-      </div>
     </div>
   );
 } 
