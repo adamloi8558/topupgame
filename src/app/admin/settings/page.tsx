@@ -2,7 +2,6 @@ import { Metadata } from 'next';
 import { SystemSettings } from '@/components/admin/settings/system-settings';
 import { BankSettings } from '@/components/admin/settings/bank-settings';
 import { EasySlipSettings } from '@/components/admin/settings/easyslip-settings';
-import { GameSettings } from '@/components/admin/settings/game-settings';
 import { NotificationSettings } from '@/components/admin/settings/notification-settings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -24,11 +23,10 @@ export default function AdminSettingsPage() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="system" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="system">ระบบทั่วไป</TabsTrigger>
           <TabsTrigger value="bank">บัญชีธนาคาร</TabsTrigger>
           <TabsTrigger value="easyslip">EasySlip API</TabsTrigger>
-          <TabsTrigger value="games">เกม</TabsTrigger>
           <TabsTrigger value="notifications">การแจ้งเตือน</TabsTrigger>
         </TabsList>
         
@@ -42,10 +40,6 @@ export default function AdminSettingsPage() {
         
         <TabsContent value="easyslip" className="mt-6">
           <EasySlipSettings />
-        </TabsContent>
-        
-        <TabsContent value="games" className="mt-6">
-          <GameSettings />
         </TabsContent>
         
         <TabsContent value="notifications" className="mt-6">

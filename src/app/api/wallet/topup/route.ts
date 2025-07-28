@@ -58,10 +58,15 @@ export async function POST(request: NextRequest) {
     let slipUrl: string;
     try {
       const uploadResult = await cloudflareR2.uploadFile(slipFile, fileName, {
-        userId: authenticatedUser.id,
-        type: 'wallet-topup-slip',
+        metadata: {
+          userId: authenticatedUser.id,
+          type: 'wallet-topup-slip',
+        },
       });
-      slipUrl = uploadResult.url;
+      slipUrl = uploadResult.url || '';
+      if (!slipUrl) {
+        throw new Error('Upload failed - no URL returned');
+      }
     } catch (error) {
       console.error('Slip upload failed:', error);
       return NextResponse.json(
@@ -75,31 +80,27 @@ export async function POST(request: NextRequest) {
       .insert(slips)
       .values({
         id: slipId,
-        userId: authenticatedUser.id,
         orderId: null, // For wallet topup, no specific order
-        amount: amountNum.toString(),
-        imageUrl: slipUrl,
+        fileUrl: slipUrl,
+        fileName: slipFile.name,
         status: 'pending',
-        createdAt: new Date(),
       })
       .returning();
 
     // Verify slip with EasySlip API
     try {
-      const verifyResult = await easySlipAPI.verifySlip(slipUrl);
+      const verifyResult = await easySlipAPI.verifySlip({ url: slipUrl });
       
       if (verifyResult.success && verifyResult.data) {
         const slipData = verifyResult.data;
         
         // Check if slip amount matches
-        const slipAmount = parseFloat(slipData.amount?.amount || '0');
+        const slipAmount = parseFloat(slipData.amount?.amount?.toString() || '0');
         if (Math.abs(slipAmount - amountNum) > 0.01) {
           await db
             .update(slips)
             .set({ 
               status: 'rejected',
-              verificationData: verifyResult,
-              updatedAt: new Date(),
             })
             .where(eq(slips.id, slipId));
 
@@ -110,14 +111,12 @@ export async function POST(request: NextRequest) {
         }
 
         // Check bank account (optional - you can customize this)
-        const receiverBank = slipData.receiver?.bank?.name;
+        const receiverBank = slipData.receiver?.account?.bank;
         if (receiverBank && !receiverBank.includes('กรุงไทย')) {
           await db
             .update(slips)
             .set({ 
               status: 'rejected',
-              verificationData: verifyResult,
-              updatedAt: new Date(),
             })
             .where(eq(slips.id, slipId));
 
@@ -132,8 +131,7 @@ export async function POST(request: NextRequest) {
           .update(slips)
           .set({ 
             status: 'verified',
-            verificationData: verifyResult,
-            updatedAt: new Date(),
+            verifiedAt: new Date(),
           })
           .where(eq(slips.id, slipId));
 
@@ -142,7 +140,6 @@ export async function POST(request: NextRequest) {
           .update(users)
           .set({ 
             points: (parseFloat(authenticatedUser.points) + amountNum).toString(),
-            updatedAt: new Date(),
           })
           .where(eq(users.id, authenticatedUser.id))
           .returning();
@@ -154,12 +151,11 @@ export async function POST(request: NextRequest) {
             id: uuidv4(),
             userId: authenticatedUser.id,
             type: 'topup',
-            status: 'completed',
             amount: amountNum.toString(),
-            pointsEarned: amountNum.toString(),
+            pointsBefore: authenticatedUser.points || '0',
+            pointsAfter: updatedUser.points || '0',
             referenceId: slipId,
             description: `เติมพ้อยผ่านการโอนเงิน ${amountNum} บาท`,
-            createdAt: new Date(),
           });
 
         return NextResponse.json({
@@ -178,14 +174,12 @@ export async function POST(request: NextRequest) {
           .update(slips)
           .set({ 
             status: 'rejected',
-            verificationData: verifyResult,
-            updatedAt: new Date(),
           })
           .where(eq(slips.id, slipId));
 
         return NextResponse.json({
           success: false,
-          error: verifyResult.error || 'ไม่สามารถตรวจสอบสลิปได้',
+          error: 'ไม่สามารถตรวจสอบสลิปได้',
         }, { status: 400 });
       }
 
@@ -197,7 +191,6 @@ export async function POST(request: NextRequest) {
         .update(slips)
         .set({ 
           status: 'pending',
-          updatedAt: new Date(),
         })
         .where(eq(slips.id, slipId));
 
