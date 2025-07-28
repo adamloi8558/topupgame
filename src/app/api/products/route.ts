@@ -302,12 +302,12 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const products = filteredProducts.slice(startIndex, endIndex);
+    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
     return NextResponse.json({
       success: true,
       data: {
-        products,
+        products: paginatedProducts,
         count: total,
         pagination: {
           page,
@@ -317,11 +317,12 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
   } catch (error) {
     console.error('Products API error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'ไม่สามารถโหลดข้อมูลสินค้าได้',
         data: {
           products: [],
@@ -332,7 +333,7 @@ export async function GET(request: NextRequest) {
             total: 0,
             totalPages: 0,
           },
-        }
+        },
       },
       { status: 500 }
     );

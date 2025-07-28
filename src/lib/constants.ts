@@ -53,18 +53,17 @@ export const JWT_CONFIG = {
 
 // Cloudflare R2 Configuration
 export const CLOUDFLARE_R2_CONFIG = {
-  accountId: process.env.CLOUDFLARE_R2_ACCOUNT_ID || '',
-  accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || '',
-  secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '',
-  bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME || 'topupgame-files',
-  publicUrl: process.env.CLOUDFLARE_R2_PUBLIC_URL || 'https://your-bucket.r2.dev',
-  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT || '',
+  accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || 'f1d9f1fb650e5f91c19a2500d4a9e6fe',
+  secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '152c9846298959d138c6a3103f8a75d33004cbb305c2c9eee80e67a45dd42610',
+  bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME || 'topupgame-slip',
+  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT || 'https://006ec9fb36d37617efc47a9811cc37a1.r2.cloudflarestorage.com',
+  publicUrl: process.env.CLOUDFLARE_R2_PUBLIC_URL || 'https://006ec9fb36d37617efc47a9811cc37a1.r2.cloudflarestorage.com',
 };
 
 // EasySlip API Configuration
 export const EASYSLIP_CONFIG = {
   apiUrl: process.env.EASYSLIP_API_URL || 'https://developer.easyslip.com/api/v1',
-  accessToken: process.env.EASYSLIP_ACCESS_TOKEN || '',
+  accessToken: process.env.EASYSLIP_ACCESS_TOKEN || '6f5c1938-a059-4692-97e2-743c6661a97f',
 };
 
 // Navigation
