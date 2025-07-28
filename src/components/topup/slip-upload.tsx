@@ -31,16 +31,16 @@ export function SlipUpload({ orderId, onUploadSuccess }: SlipUploadProps) {
     const file = acceptedFiles[0];
     if (file) {
       // Validate file
-      if (file.size > FILE_UPLOAD.maxFileSize) {
+      if (file.size > FILE_UPLOAD.MAX_SIZE) {
         addToast({
           type: 'error',
           title: 'ไฟล์ใหญ่เกินไป',
-          message: `ขนาดไฟล์ต้องไม่เกิน ${FILE_UPLOAD.maxFileSize / 1024 / 1024} MB`,
+          message: `ขนาดไฟล์ต้องไม่เกิน ${FILE_UPLOAD.MAX_SIZE / 1024 / 1024} MB`,
         });
         return;
       }
 
-      if (!FILE_UPLOAD.allowedTypes.includes(file.type)) {
+      if (!FILE_UPLOAD.ALLOWED_TYPES.includes(file.type)) {
         addToast({
           type: 'error',
           title: 'ประเภทไฟล์ไม่ถูกต้อง',
@@ -216,7 +216,7 @@ export function SlipUpload({ orderId, onUploadSuccess }: SlipUploadProps) {
                   {isDragActive ? 'วางไฟล์ที่นี่...' : 'ลากไฟล์มาวาง หรือคลิกเพื่อเลือก'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  รองรับไฟล์ภาพ JPG, PNG, WEBP (สูงสุด {FILE_UPLOAD.maxFileSize / 1024 / 1024} MB)
+                  รองรับไฟล์ภาพ JPG, PNG, WEBP (สูงสุด {FILE_UPLOAD.MAX_SIZE / 1024 / 1024} MB)
                 </p>
                 <p className="text-xs text-muted-foreground">
                   💡 เคล็ดลับ: คุณสามารถ Ctrl+V วางภาพจาก clipboard ได้
