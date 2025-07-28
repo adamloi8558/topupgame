@@ -2,7 +2,7 @@
 const nextConfig = {
   output: "standalone",
   images: {
-    domains: ['localhost', 'your-bucket.r2.dev'],
+    domains: ['localhost', 'dumstore.com', 'your-bucket.r2.dev'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -11,6 +11,14 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'dumstore.com',
+      },
+      {
+        protocol: 'https', 
+        hostname: 'dumstore.com',
       },
     ],
   },
