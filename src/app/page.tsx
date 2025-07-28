@@ -108,28 +108,57 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Games Section */}
+      {/* Wallet Topup Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gradient">
-            เกมยอดนิยม
+            เติมพ้อยเข้ากระเป๋า
           </h2>
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 max-w-4xl mx-auto">
-            {SUPPORTED_GAMES.map((game) => (
-              <Link key={game.id} href={`/topup/${game.slug}`}>
-                <Card gaming className="group cursor-pointer transition-all duration-300 hover:scale-105">
-                  <CardContent className="p-6 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-neon-green/20 rounded-lg flex items-center justify-center group-hover:bg-neon-green/30 transition-colors">
-                      <span className="text-2xl font-bold text-neon-green">
-                        {game.name.substring(0, 2)}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold text-sm text-center">{game.name}</h3>
-                  </CardContent>
-                </Card>
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              {/* Quick Amounts */}
+              <Card gaming className="text-center p-6">
+                <div className="w-16 h-16 mx-auto mb-4 bg-neon-green/20 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-bold text-neon-green">50</span>
+                </div>
+                <h3 className="font-semibold mb-2">เริ่มต้น 50 บาท</h3>
+                <p className="text-sm text-muted-foreground">เหมาะสำหรับซื้อของเล็กๆ น้อยๆ</p>
+              </Card>
+
+              <Card gaming className="text-center p-6">
+                <div className="w-16 h-16 mx-auto mb-4 bg-neon-blue/20 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-bold text-neon-blue">500</span>
+                </div>
+                <h3 className="font-semibold mb-2">เติม 500 บาท</h3>
+                <p className="text-sm text-muted-foreground">เหมาะสำหรับซื้อของราคากลาง</p>
+              </Card>
+
+              <Card gaming className="text-center p-6">
+                <div className="w-16 h-16 mx-auto mb-4 bg-neon-purple/20 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-bold text-neon-purple">2K</span>
+                </div>
+                <h3 className="font-semibold mb-2">เติม 2,000 บาท</h3>
+                <p className="text-sm text-muted-foreground">เหมาะสำหรับซื้อของแพงๆ</p>
+              </Card>
+            </div>
+
+            {/* Bank Info Preview */}
+            <Card gaming className="text-center p-8">
+              <h3 className="text-xl font-bold mb-4 text-neon-green">โอนเงินเข้าบัญชี</h3>
+              <div className="bg-gaming-darker p-6 rounded-lg border border-neon-green/20 max-w-md mx-auto">
+                <div className="space-y-2">
+                  <p><span className="text-muted-foreground">ธนาคาร:</span> <span className="font-medium">กรุงไทย</span></p>
+                  <p><span className="text-muted-foreground">ชื่อบัญชี:</span> <span className="font-medium">ฐาปนพงษ์ เดชยศดี</span></p>
+                  <p><span className="text-muted-foreground">เลขบัญชี:</span> <span className="font-bold text-neon-green">6645533950</span></p>
+                </div>
+              </div>
+              <Link href="/topup">
+                <Button variant="gaming" size="lg" className="mt-6">
+                  เติมพ้อยตอนนี้
+                </Button>
               </Link>
-            ))}
+            </Card>
           </div>
         </div>
       </section>
@@ -165,7 +194,7 @@ export default function HomePage() {
       <section className="py-16 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gradient">
-            แพ็คเกจเติมพ้อย
+            แพ็คเกจเติมพ้อยเข้ากระเป๋า
           </h2>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-4xl mx-auto">
@@ -191,7 +220,7 @@ export default function HomePage() {
           <div className="text-center mt-8">
             <Button variant="gaming" size="lg" asChild>
               <Link href="/topup">
-                เริ่มเติมพ้อย
+                เริ่มเติมพ้อยเข้ากระเป๋า
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -203,10 +232,10 @@ export default function HomePage() {
       <section className="py-16 px-4 bg-gaming-darker/50">
         <div className="container mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gradient">
-            พร้อมเริ่มต้นแล้วใช่ไหม?
+            พร้อมเติมพ้อยและช้อปปิ้งแล้วใช่ไหม?
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            เข้าร่วมกับผู้เล่นหลักหมื่นคนที่เชื่อมั่นในบริการของเรา
+            เติมพ้อยเข้ากระเป๋าแล้วช้อปปิ้งสินค้าต่างๆ ในเว็บไซต์ได้เลย
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

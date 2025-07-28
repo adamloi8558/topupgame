@@ -332,7 +332,7 @@ export const API_ENDPOINTS = {
 // Navigation Menu
 export const NAVIGATION_ITEMS = [
   { label: 'หน้าแรก', href: '/', icon: 'Home' },
-  { label: 'เติมพ้อย', href: '/topup', icon: 'CreditCard' },
+  { label: 'เติมพ้อย', href: '/topup', icon: 'Wallet' },
   { label: 'ร้านค้า', href: '/shop', icon: 'ShoppingBag' },
   { label: 'ประวัติ', href: '/history', icon: 'History' },
 ];
