@@ -187,13 +187,13 @@ export function ShopFilters({ filters, onFiltersChange, className }: ShopFilters
               </Button>
               {GAME_RANKS.map((rank) => (
                 <Button
-                  key={rank}
-                  variant={filters.rank === rank ? "gaming" : "outline"}
+                  key={rank.rank}
+                  variant={filters.rank === rank.rank ? "gaming" : "outline"}
                   size="sm"
                   onClick={() => updateFilter('rank', rank)}
                   className="w-full justify-start"
                 >
-                  {rank}
+                  {rank.rank}
                 </Button>
               ))}
             </div>
