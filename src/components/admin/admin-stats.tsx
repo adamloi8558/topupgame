@@ -7,9 +7,9 @@ import {
   Users, 
   ShoppingCart, 
   DollarSign, 
-  TrendingUp,
-  Package,
-  CreditCard
+  Package, 
+  FileText,
+  TrendingUp
 } from 'lucide-react';
 
 interface AdminStatsData {
@@ -33,20 +33,15 @@ export function AdminStats() {
     try {
       setIsLoading(true);
       
-      // Mock data for now
-      setTimeout(() => {
-        setStats({
-          totalUsers: 1248,
-          totalOrders: 3567,
-          totalRevenue: 89450,
-          totalProducts: 156,
-          pendingSlips: 23,
-          monthlyGrowth: 12.5,
-        });
-        setIsLoading(false);
-      }, 1000);
+      const response = await fetch('/api/admin/stats');
+      const result = await response.json();
+
+      if (result.success) {
+        setStats(result.data);
+      }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -55,59 +50,20 @@ export function AdminStats() {
     return new Intl.NumberFormat('th-TH').format(num);
   };
 
-  const statsCards = [
-    {
-      title: 'ผู้ใช้งานทั้งหมด',
-      value: stats?.totalUsers || 0,
-      icon: Users,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-    },
-    {
-      title: 'คำสั่งซื้อทั้งหมด',
-      value: stats?.totalOrders || 0,
-      icon: ShoppingCart,
-      color: 'text-green-500',
-      bgColor: 'bg-green-500/10',
-    },
-    {
-      title: 'รายได้ (บาท)',
-      value: stats?.totalRevenue || 0,
-      icon: DollarSign,
-      color: 'text-yellow-500',
-      bgColor: 'bg-yellow-500/10',
-      prefix: '฿',
-    },
-    {
-      title: 'สินค้าทั้งหมด',
-      value: stats?.totalProducts || 0,
-      icon: Package,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-500/10',
-    },
-    {
-      title: 'สลิปรอตรวจ',
-      value: stats?.pendingSlips || 0,
-      icon: CreditCard,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500/10',
-    },
-    {
-      title: 'เติบโตรายเดือน',
-      value: stats?.monthlyGrowth || 0,
-      icon: TrendingUp,
-      color: 'text-neon-green',
-      bgColor: 'bg-neon-green/10',
-      suffix: '%',
-    },
-  ];
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('th-TH', {
+      style: 'currency',
+      currency: 'THB',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 6 }).map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        {[...Array(6)].map((_, i) => (
           <Card key={i} gaming>
-            <CardContent className="flex items-center justify-center p-6">
+            <CardContent className="flex items-center justify-center py-8">
               <LoadingSpinner size="sm" />
             </CardContent>
           </Card>
@@ -116,32 +72,87 @@ export function AdminStats() {
     );
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {statsCards.map((stat, index) => {
-        const Icon = stat.icon;
-        
-        return (
-          <Card key={index} gaming>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stat.prefix}{formatNumber(stat.value)}{stat.suffix}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                อัปเดตล่าสุด: ตอนนี้
-              </p>
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} gaming>
+            <CardContent className="flex items-center justify-center py-8 text-muted-foreground">
+              ไม่สามารถโหลดข้อมูลได้
             </CardContent>
           </Card>
-        );
-      })}
+        ))}
+      </div>
+    );
+  }
+
+  const statsItems = [
+    {
+      title: 'ผู้ใช้ทั้งหมด',
+      value: formatNumber(stats.totalUsers),
+      icon: Users,
+      iconColor: 'text-blue-500',
+      bgColor: 'bg-blue-500/10',
+    },
+    {
+      title: 'คำสั่งซื้อ',
+      value: formatNumber(stats.totalOrders),
+      icon: ShoppingCart,
+      iconColor: 'text-green-500',
+      bgColor: 'bg-green-500/10',
+    },
+    {
+      title: 'รายได้',
+      value: formatCurrency(stats.totalRevenue),
+      icon: DollarSign,
+      iconColor: 'text-yellow-500',
+      bgColor: 'bg-yellow-500/10',
+    },
+    {
+      title: 'สินค้า',
+      value: formatNumber(stats.totalProducts),
+      icon: Package,
+      iconColor: 'text-purple-500',
+      bgColor: 'bg-purple-500/10',
+    },
+    {
+      title: 'สลิปรอตรวจ',
+      value: formatNumber(stats.pendingSlips),
+      icon: FileText,
+      iconColor: 'text-orange-500',
+      bgColor: 'bg-orange-500/10',
+    },
+    {
+      title: 'การเติบโต',
+      value: `+${stats.monthlyGrowth.toFixed(1)}%`,
+      icon: TrendingUp,
+      iconColor: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      {statsItems.map((item, index) => (
+        <Card key={index} gaming>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {item.title}
+            </CardTitle>
+            <div className={`p-2 rounded-lg ${item.bgColor}`}>
+              <item.icon className={`h-4 w-4 ${item.iconColor}`} />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{item.value}</div>
+            {item.title === 'การเติบโต' && (
+              <p className="text-xs text-muted-foreground">
+                เทียบกับเดือนที่แล้ว
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 } 

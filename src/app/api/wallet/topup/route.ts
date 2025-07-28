@@ -5,8 +5,7 @@ import { eq } from 'drizzle-orm';
 import { getAuthUser, requireAuth } from '@/lib/auth';
 import { cloudflareR2 } from '@/lib/cloudflare-r2';
 import { easySlipAPI } from '@/lib/easyslip';
-import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants';
-import { ApiResponse } from '@/types';
+import { ERROR_MESSAGES } from '@/lib/constants';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
