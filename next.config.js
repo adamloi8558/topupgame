@@ -58,6 +58,10 @@ const nextConfig = {
     }
     return config;
   },
+  // Add dynamic route configuration
+  dynamicParams: true,
+  staticPageGenerationTimeout: 300,
+  serverComponents: true,
 };
 
 module.exports = nextConfig; 

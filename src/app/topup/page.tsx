@@ -14,7 +14,13 @@ import { Wallet, Upload, Copy, CheckCircle, Banknote } from 'lucide-react';
 import { z } from 'zod';
 
 const walletTopupSchema = z.object({
-  slip: z.instanceof(File, { message: 'กรุณาเลือกไฟล์สลิป' }),
+  slip: z.any()
+    .refine((file) => file instanceof File, { message: 'กรุณาเลือกไฟล์สลิป' })
+    .refine((file) => file?.size <= 5 * 1024 * 1024, { message: 'ไฟล์ต้องมีขนาดไม่เกิน 5MB' })
+    .refine(
+      (file) => ['image/jpeg', 'image/png', 'image/webp'].includes(file?.type),
+      { message: 'รองรับเฉพาะไฟล์ภาพ (JPG, PNG, WEBP)' }
+    ),
 });
 
 type WalletTopupData = z.infer<typeof walletTopupSchema>;
