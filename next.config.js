@@ -36,6 +36,7 @@ const nextConfig = {
   },
   experimental: {
     esmExternals: false,
+    serverActions: true,
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -58,10 +59,6 @@ const nextConfig = {
     }
     return config;
   },
-  // Add dynamic route configuration
-  dynamicParams: true,
-  staticPageGenerationTimeout: 300,
-  serverComponents: true,
 };
 
 module.exports = nextConfig; 
