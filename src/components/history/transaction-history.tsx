@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,13 +29,7 @@ export function TransactionHistory() {
   const { requireAuth } = useAuth();
   const { addToast } = useUIStore();
 
-  useEffect(() => {
-    if (requireAuth()) {
-      fetchTransactions();
-    }
-  }, [currentPage]);
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -69,7 +63,13 @@ export function TransactionHistory() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, addToast]);
+
+  useEffect(() => {
+    if (requireAuth()) {
+      fetchTransactions();
+    }
+  }, [requireAuth, fetchTransactions]);
 
   const getTransactionIcon = (type: string) => {
     switch (type) {

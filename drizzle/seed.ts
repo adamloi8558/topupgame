@@ -262,17 +262,17 @@ async function seedDatabase() {
       },
       {
         key: 'bank_name',
-        value: 'กรุงไทย',
+        value: 'กรุณาตั้งค่าในแอดมิน',
         description: 'ชื่อธนาคาร',
       },
       {
         key: 'bank_account_number',
-        value: '6645533950',
+        value: 'กรุณาตั้งค่าในแอดมิน',
         description: 'เลขที่บัญชี',
       },
       {
         key: 'bank_account_name',
-        value: 'ฐาปนพงษ์ เดชยศดี',
+        value: 'กรุณาตั้งค่าในแอดมิน',
         description: 'ชื่อบัญชี',
       },
       {

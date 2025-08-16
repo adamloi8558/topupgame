@@ -18,11 +18,12 @@ export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 // Bank Information
+// หมายเหตุ: ข้อมูลธนาคารให้ไปดึงจาก DB ผ่าน API แทนการ hardcode
 export const BANK_INFO = {
-  bankName: 'กรุงไทย',
-  accountName: 'ฐาปนพงษ์ เดชยศดี',
-  accountNumber: '6645533950',
-  branchName: 'สาขาท่าพระ',
+  bankName: '',
+  accountName: '',
+  accountNumber: '',
+  branchName: '',
 };
 
 // Rate Limiting Configuration
@@ -56,8 +57,8 @@ export const CLOUDFLARE_R2_CONFIG = {
   accountId: process.env.CLOUDFLARE_R2_ACCOUNT_ID || '',
   accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || '',
   secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '',
-  bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME || 'topupgame-files',
-  publicUrl: process.env.CLOUDFLARE_R2_PUBLIC_URL || 'https://your-bucket.r2.dev',
+  bucketName: process.env.CLOUDFLARE_R2_BUCKET_NAME || '',
+  publicUrl: process.env.CLOUDFLARE_R2_PUBLIC_URL || '',
   endpoint: process.env.CLOUDFLARE_R2_ENDPOINT || '',
 };
 
@@ -194,12 +195,12 @@ export const GAME_RANKS = [
 
 // Top-up Packages
 export const TOPUP_AMOUNTS = [
-  { value: 50, label: '50 บาท', bonus: 0 },
-  { value: 100, label: '100 บาท', bonus: 5 },
-  { value: 200, label: '200 บาท', bonus: 15 },
-  { value: 500, label: '500 บาท', bonus: 50 },
-  { value: 1000, label: '1,000 บาท', bonus: 120 },
-  { value: 2000, label: '2,000 บาท', bonus: 300 },
+  { value: 50, label: '50 พ้อย', bonus: 0 },
+  { value: 100, label: '100 พ้อย', bonus: 0 },
+  { value: 200, label: '200 พ้อย', bonus: 0 },
+  { value: 500, label: '500 พ้อย', bonus: 0 },
+  { value: 1000, label: '1,000 พ้อย', bonus: 0 },
+  { value: 2000, label: '2,000 พ้อย', bonus: 0 },
 ];
 
 // Order Status

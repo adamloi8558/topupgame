@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ProductCard } from './product-card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,7 @@ export function ProductGrid({ filters, className }: ProductGridProps) {
     totalPages: 0,
   });
 
-  useEffect(() => {
-    fetchProducts();
-  }, [filters, pagination.page]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -70,7 +66,11 @@ export function ProductGrid({ filters, className }: ProductGridProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [filters, pagination.page, pagination.limit]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {

@@ -8,7 +8,7 @@ export function ToastProvider() {
   const { toasts, removeToast } = useUIStore();
 
   return (
-    <div className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]">
+    <div className="fixed bottom-0 right-0 z-[100] p-4 md:max-w-[420px]">
       {toasts.map((toast) => (
         <Toast
           key={toast.id}
@@ -17,9 +17,8 @@ export function ToastProvider() {
           description={toast.message}
           onClose={() => removeToast(toast.id)}
           className={cn(
-            "mb-2 last:mb-0 sm:mb-0 sm:mt-2 sm:last:mt-0",
-            "animate-in slide-in-from-top-full duration-300",
-            "data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right-full"
+            "animate-in fade-in slide-in-from-bottom-4 duration-300",
+            "data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-right-4"
           )}
         />
       ))}

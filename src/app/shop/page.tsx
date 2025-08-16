@@ -60,7 +60,7 @@ export default function ShopPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
-          <div className={`lg:col-span-1 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
+          <div className={`${showMobileFilters ? 'block' : 'hidden lg:block'}`}>
             <div className="sticky top-8">
               <ShopFilters 
                 filters={filters}

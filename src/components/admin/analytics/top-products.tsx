@@ -26,45 +26,14 @@ export function TopProducts() {
   const fetchTopProducts = async () => {
     try {
       setIsLoading(true);
-      
-      // Mock data
-      setTimeout(() => {
-        setProducts([
-          {
-            id: '1',
-            title: 'RoV Diamond Account',
-            game: 'RoV',
-            rank: 'Diamond',
-            sales: 23,
-            revenue: 57500,
-          },
-          {
-            id: '2', 
-            title: 'VALORANT Immortal ID',
-            game: 'VALORANT',
-            rank: 'Immortal',
-            sales: 18,
-            revenue: 63000,
-          },
-          {
-            id: '3',
-            title: 'Free Fire Grandmaster',
-            game: 'Free Fire',
-            rank: 'Grandmaster',
-            sales: 15,
-            revenue: 27000,
-          },
-          {
-            id: '4',
-            title: 'PUBG Conqueror',
-            game: 'PUBG Mobile',
-            rank: 'Conqueror',
-            sales: 12,
-            revenue: 48000,
-          },
-        ]);
-        setIsLoading(false);
-      }, 600);
+      const res = await fetch('/api/admin/analytics');
+      const json = await res.json();
+      if (json.success && json.data?.topProducts) {
+        setProducts(json.data.topProducts);
+      } else {
+        setProducts([]);
+      }
+      setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch top products:', error);
       setIsLoading(false);

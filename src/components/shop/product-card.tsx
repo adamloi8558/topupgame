@@ -23,7 +23,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
   const { addItem } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const { addToast } = useUIStore();
-
+ 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

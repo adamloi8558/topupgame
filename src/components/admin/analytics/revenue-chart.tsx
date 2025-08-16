@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -17,11 +17,7 @@ export function RevenueChart() {
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d');
 
-  useEffect(() => {
-    fetchRevenueData();
-  }, [timeRange]);
-
-  const fetchRevenueData = async () => {
+  const fetchRevenueData = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -48,7 +44,11 @@ export function RevenueChart() {
       console.error('Failed to fetch revenue data:', error);
       setIsLoading(false);
     }
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    fetchRevenueData();
+  }, [fetchRevenueData]);
 
   const formatCurrency = (num: number) => {
     return new Intl.NumberFormat('th-TH', {

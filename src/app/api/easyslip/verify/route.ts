@@ -1,12 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { slips, orders, users, transactions } from '@/lib/db/schema';
+import { slips, orders, users, transactions, adminSettings } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { easySlipAPI } from '@/lib/easyslip';
 import { getAuthUser, requireAuth } from '@/lib/auth';
-import { ERROR_MESSAGES, SUCCESS_MESSAGES, BANK_INFO } from '@/lib/constants';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants';
 import { ApiResponse } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+
+// Function to get bank settings from admin_settings
+async function getBankSettings() {
+  const bankSettings = await db
+    .select()
+    .from(adminSettings)
+    .where(eq(adminSettings.key, 'bank_info'))
+    .limit(1);
+
+  if (!bankSettings.length) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(bankSettings[0].value);
+  } catch (error) {
+    console.error('Error parsing bank settings:', error);
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -156,12 +176,21 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Get bank settings from admin_settings
+    const bankSettings = await getBankSettings();
+    if (!bankSettings) {
+      return NextResponse.json({
+        success: false,
+        error: 'ไม่พบการตั้งค่าข้อมูลธนาคาร กรุณาติดต่อแอดมิน',
+      }, { status: 500 });
+    }
+
     // Validate slip details
     const slipValidation = easySlipAPI.processSlipResult(
       verificationResult,
       parseFloat(slip.order.amount),
-      BANK_INFO.bankName,
-      BANK_INFO.accountName
+      bankSettings.bankName || 'ไม่ระบุ',
+      bankSettings.accountName || 'ไม่ระบุ'
     );
 
     if (!slipValidation.valid) {

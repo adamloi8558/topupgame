@@ -12,8 +12,8 @@ export function BankSettings() {
   const { addToast } = useUIStore();
   const [copied, setCopied] = useState(false);
   const [settings, setSettings] = useState({
-    bankName: 'กรุงไทย',
-    accountNumber: '6645533950',
+    bankName: '',
+    accountNumber: '',
     accountName: 'DumStore',
     branchName: 'สาขาท่าพระ',
     accountType: 'savings',
@@ -41,8 +41,17 @@ export function BankSettings() {
 
   const handleSave = async () => {
     try {
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const res = await fetch('/api/settings/bank', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bankName: settings.bankName,
+          accountName: settings.accountName,
+          accountNumber: settings.accountNumber,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'อัปเดตไม่สำเร็จ');
       
       addToast({
         type: 'success',

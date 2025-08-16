@@ -1,84 +1,127 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/header';
-import { BankInfo } from '@/components/topup/bank-info';
-import { SlipUpload } from '@/components/topup/slip-upload';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useUIStore } from '@/stores/ui-store';
-import { OrderWithDetails, ApiResponse } from '@/types';
-import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, ArrowLeft } from 'lucide-react';
+
+const BankInfo = dynamic(() => import('@/components/topup/bank-info').then(mod => mod.BankInfo), { ssr: false });
+const SlipUpload = dynamic(() => import('@/components/topup/slip-upload').then(mod => mod.SlipUpload), { ssr: false });
+
+interface Order {
+  id: string;
+  amount: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  type: 'topup' | 'purchase';
+  pointsEarned: number;
+  createdAt: string;
+}
 
 export default function CheckoutPage() {
-  const [order, setOrder] = useState<OrderWithDetails | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user, logout, requireAuth } = useAuth();
-  const { addToast } = useUIStore();
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const orderId = searchParams.get('order');
+  const router = useRouter();
+  const orderId = searchParams.get('orderId') || '';
+  const { user, logout } = useAuth();
+  const { addToast } = useUIStore();
 
   useEffect(() => {
-    if (!requireAuth()) return;
-    
     if (!orderId) {
       addToast({
         type: 'error',
         title: 'ไม่พบข้อมูลคำสั่งซื้อ',
-        message: 'กรุณาสร้างคำสั่งซื้อใหม่',
+        message: 'กรุณาเริ่มต้นใหม่',
       });
       router.push('/topup');
       return;
     }
 
     fetchOrder();
-  }, [orderId, requireAuth, router, addToast]);
+  }, [orderId, addToast, router]);
 
   const fetchOrder = async () => {
     try {
-      setIsLoading(true);
-      
-      const response = await fetch(`/api/orders/${orderId}`);
-      const result: ApiResponse<OrderWithDetails> = await response.json();
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/auth');
+        return;
+      }
 
-      if (result.success && result.data) {
-        setOrder(result.data);
+      const response = await fetch(`/api/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setOrder(result.order);
       } else {
         addToast({
           type: 'error',
           title: 'ไม่พบคำสั่งซื้อ',
-          message: 'คำสั่งซื้อไม่ถูกต้องหรือหมดอายุ',
+          message: result.error || 'คำสั่งซื้อไม่ถูกต้อง',
         });
         router.push('/topup');
       }
     } catch (error) {
-      console.error('Failed to fetch order:', error);
       addToast({
         type: 'error',
         title: 'เกิดข้อผิดพลาด',
         message: 'ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้',
       });
-      router.push('/topup');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleUploadSuccess = () => {
-    addToast({
-      type: 'success',
-      title: 'เติมพ้อยสำเร็จ! 🎉',
-      message: 'ขอบคุณที่ใช้บริการ',
-      duration: 5000,
-    });
-    
-    setTimeout(() => {
-      router.push('/');
-    }, 2000);
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return {
+          icon: <Clock className="h-4 w-4" />,
+          label: 'รอชำระเงิน',
+          variant: 'default' as const,
+          color: 'text-yellow-500'
+        };
+      case 'completed':
+        return {
+          icon: <CheckCircle className="h-4 w-4" />,
+          label: 'ชำระเงินแล้ว',
+          variant: 'default' as const,
+          color: 'text-green-500'
+        };
+      case 'failed':
+        return {
+          icon: <XCircle className="h-4 w-4" />,
+          label: 'ชำระเงินไม่สำเร็จ',
+          variant: 'destructive' as const,
+          color: 'text-red-500'
+        };
+      case 'cancelled':
+        return {
+          icon: <XCircle className="h-4 w-4" />,
+          label: 'ยกเลิกแล้ว',
+          variant: 'secondary' as const,
+          color: 'text-gray-500'
+        };
+      default:
+        return {
+          icon: <Clock className="h-4 w-4" />,
+          label: 'ไม่ทราบสถานะ',
+          variant: 'secondary' as const,
+          color: 'text-gray-500'
+        };
+    }
   };
 
   if (isLoading) {
@@ -86,8 +129,12 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-gradient-gaming">
         <Header user={user} onLogout={logout} />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <LoadingSpinner size="lg" color="neon" />
+          <div className="max-w-2xl mx-auto">
+            <Card gaming>
+              <CardContent className="flex items-center justify-center py-12">
+                <LoadingSpinner />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
@@ -99,156 +146,129 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-gradient-gaming">
         <Header user={user} onLogout={logout} />
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-red-500">ไม่พบคำสั่งซื้อ</h1>
-            <Button
-              onClick={() => router.push('/topup')}
-              className="mt-4"
-              variant="gaming"
-            >
-              กลับไปหน้าเติมพ้อย
-            </Button>
+          <div className="max-w-2xl mx-auto">
+            <Card gaming>
+              <CardContent className="text-center py-12">
+                <p className="text-muted-foreground">ไม่พบข้อมูลคำสั่งซื้อ</p>
+                <Button
+                  variant="gaming"
+                  onClick={() => router.push('/topup')}
+                  className="mt-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  กลับหน้าเติมพ้อย
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
     );
   }
 
-  const getStatusIcon = () => {
-    switch (order.status) {
-      case 'completed':
-        return <CheckCircle className="h-6 w-6 text-neon-green" />;
-      case 'processing':
-        return <Clock className="h-6 w-6 text-neon-blue" />;
-      default:
-        return <Clock className="h-6 w-6 text-yellow-500" />;
-    }
-  };
-
-  const getStatusText = () => {
-    switch (order.status) {
-      case 'completed':
-        return 'เติมพ้อยสำเร็จ';
-      case 'processing':
-        return 'กำลังตรวจสอบ';
-      default:
-        return 'รอการชำระเงิน';
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (order.status) {
-      case 'completed':
-        return 'text-neon-green';
-      case 'processing':
-        return 'text-neon-blue';
-      default:
-        return 'text-yellow-500';
-    }
-  };
+  const statusInfo = getStatusInfo(order.status);
 
   return (
     <div className="min-h-screen bg-gradient-gaming">
       <Header user={user} onLogout={logout} />
-      
       <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/topup')}
-          className="mb-6"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          กลับไปหน้าเติมพ้อย
-        </Button>
-
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Page Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-gradient">ชำระเงิน</h1>
-            <p className="text-muted-foreground">
-              โอนเงินและอัปโหลดสลิปเพื่อเติมพ้อย
-            </p>
-          </div>
-
-          {/* Order Summary */}
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Order Info */}
           <Card gaming>
             <CardHeader>
-              <CardTitle>สรุปคำสั่งเติมพ้อย</CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>ข้อมูลคำสั่งซื้อ</CardTitle>
+                  <CardDescription>หมายเลขคำสั่งซื้อ: {order.id}</CardDescription>
+                </div>
+                <Badge variant={statusInfo.variant} className="flex items-center gap-1">
+                  <span className={statusInfo.color}>{statusInfo.icon}</span>
+                  {statusInfo.label}
+                </Badge>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-muted-foreground">เกม</div>
-                  <div className="font-semibold">{order.game?.name}</div>
+            <CardContent>
+              <div className="bg-gaming-darker p-4 rounded-lg border border-neon-green/20">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">จำนวนเงิน:</span>
+                  <span className="font-bold text-neon-green text-lg">
+                    ฿{order.amount.toLocaleString()}
+                  </span>
                 </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">UID เกม</div>
-                  <div className="font-semibold font-mono">{order.gameUid}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">จำนวนเงิน</div>
-                  <div className="font-semibold text-lg">฿{parseInt(order.amount).toLocaleString()}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">สถานะ</div>
-                  <div className={`flex items-center space-x-2 ${getStatusColor()}`}>
-                    {getStatusIcon()}
-                    <span className="font-semibold">{getStatusText()}</span>
-                  </div>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-muted-foreground">พ้อยที่จะได้รับ:</span>
+                  <span className="font-medium text-blue-300">
+                    {order.pointsEarned.toLocaleString()} พ้อย
+                  </span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Payment Process */}
+          {/* Payment Section */}
           {order.status === 'pending' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Bank Info */}
-              <div>
-                <BankInfo amount={parseInt(order.amount)} />
-              </div>
-
-              {/* Slip Upload */}
-              <div>
-                <SlipUpload
-                  orderId={order.id}
-                  onUploadSuccess={handleUploadSuccess}
-                />
-              </div>
-            </div>
-          )}
-
-          {order.status === 'processing' && (
             <Card gaming>
-              <CardContent className="text-center py-8">
-                <Clock className="h-16 w-16 text-neon-blue mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-neon-blue mb-2">
-                  กำลังตรวจสอบสลิป
-                </h3>
-                <p className="text-muted-foreground">
-                  ระบบกำลังตรวจสอบสลิปของคุณ กรุณารอสักครู่...
-                </p>
+              <CardHeader>
+                <CardTitle>ชำระเงิน</CardTitle>
+                <CardDescription>
+                  โอนเงินและอัพโหลดสลิปเพื่อยืนยันการชำระเงิน
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <BankInfo amount={order.amount} />
+                  <SlipUpload orderId={order.id} onUploadSuccess={fetchOrder} />
+                </Suspense>
               </CardContent>
             </Card>
           )}
 
+          {/* Success/Error Messages */}
           {order.status === 'completed' && (
-            <Card gaming>
+            <Card gaming className="border-green-500/20 bg-green-500/5">
               <CardContent className="text-center py-8">
-                <CheckCircle className="h-16 w-16 text-neon-green mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-neon-green mb-2">
-                  เติมพ้อยสำเร็จ! 🎉
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-green-500 mb-2">
+                  ชำระเงินสำเร็จ!
                 </h3>
                 <p className="text-muted-foreground mb-4">
                   พ้อยได้ถูกเติมเข้าบัญชีของคุณแล้ว
                 </p>
                 <Button
-                  onClick={() => router.push('/')}
                   variant="gaming"
+                  onClick={() => router.push('/history')}
                 >
-                  กลับหน้าหลัก
+                  ดูประวัติการทำรายการ
                 </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {order.status === 'failed' && (
+            <Card gaming className="border-red-500/20 bg-red-500/5">
+              <CardContent className="text-center py-8">
+                <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-red-500 mb-2">
+                  การชำระเงินไม่สำเร็จ
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  กรุณาตรวจสอบสลิปและลองใหม่อีกครั้ง
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/topup')}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    เริ่มใหม่
+                  </Button>
+                  <Button
+                    variant="gaming"
+                    onClick={() => window.location.reload()}
+                  >
+                    ลองอีกครั้ง
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

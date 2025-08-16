@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
         // Check bank account (optional - you can customize this)
         const receiverBank = slipData.receiver?.account?.bank;
-        if (receiverBank && !receiverBank.includes('กรุงไทย')) {
+        if (receiverBank && !receiverBank.includes('กรุณาตั้งค่าในแอดมิน')) {
           await db
             .update(slips)
             .set({ 
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             success: false,
-            error: 'ธนาคารปลายทางไม่ถูกต้อง กรุณาโอนเข้าบัญชีกรุงไทยที่ระบุ',
+            error: 'ธนาคารปลายทางไม่ถูกต้อง กรุณาตรวจเลขบัญชีที่หน้าชำระเงิน',
           }, { status: 400 });
         }
 

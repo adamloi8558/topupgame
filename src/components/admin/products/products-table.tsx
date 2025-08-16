@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,11 +29,7 @@ export function ProductsTable() {
   const [totalPages, setTotalPages] = useState(1);
   const { addToast } = useUIStore();
 
-  useEffect(() => {
-    fetchProducts();
-  }, [currentPage]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -60,7 +56,11 @@ export function ProductsTable() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentPage, addToast]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const deleteProduct = async (productId: string) => {
     if (confirm('คุณแน่ใจหรือไม่ที่จะลบสินค้านี้?')) {

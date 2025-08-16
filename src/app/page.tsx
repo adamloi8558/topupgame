@@ -31,7 +31,7 @@ export default function HomePage() {
     {
       icon: <Shield className="h-8 w-8 text-neon-blue" />,
       title: 'ปลอดภัย 100%',
-      description: 'ระบบรักษาความปลอดภัยระดับธนาคาร ข้อมูลเข้ารหัส SSL',
+			description: 'ระบบรักษาความปลอดภัยระดับธนาคาร ข้อมูลเข้ารหัส SSL',
     },
     {
       icon: <Clock className="h-8 w-8 text-neon-purple" />,
@@ -111,9 +111,9 @@ export default function HomePage() {
       {/* Wallet Topup Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gradient">
-            เติมพ้อยเข้ากระเป๋า
-          </h2>
+			<h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gradient">
+				เติมพ้อยเข้ากระเป๋า
+			</h2>
           
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -147,11 +147,9 @@ export default function HomePage() {
             <Card gaming className="text-center p-8">
               <h3 className="text-xl font-bold mb-4 text-neon-green">โอนเงินเข้าบัญชี</h3>
               <div className="bg-gaming-darker p-6 rounded-lg border border-neon-green/20 max-w-md mx-auto">
-                <div className="space-y-2">
-                  <p><span className="text-muted-foreground">ธนาคาร:</span> <span className="font-medium">กรุงไทย</span></p>
-                  <p><span className="text-muted-foreground">ชื่อบัญชี:</span> <span className="font-medium">ฐาปนพงษ์ เดชยศดี</span></p>
-                  <p><span className="text-muted-foreground">เลขบัญชี:</span> <span className="font-bold text-neon-green">6645533950</span></p>
-                </div>
+					<div className="space-y-2">
+						<p className="text-muted-foreground">ดูข้อมูลบัญชีล่าสุดในหน้าชำระเงิน</p>
+					</div>
               </div>
               <Link href="/topup">
                 <Button variant="gaming" size="lg" className="mt-6">
@@ -267,9 +265,9 @@ export default function HomePage() {
       <footer className="border-t border-neon-green/20 py-8 px-4">
         <div className="container mx-auto text-center">
           <div className="text-2xl font-bold text-gradient mb-4">DumStore</div>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            เว็บไซต์เติมเกมและขายไอดีเกม ที่ดีที่สุด
-          </p>
+			<p className="text-muted-foreground mb-6 max-w-md mx-auto">
+				เว็บไซต์เติมเกม & จำหน่ายไอดีเกมแท้ ครบทุกเกมยอดนิยม ทั้ง ROV, Free Fire, Valorant และอีกมากมาย บริการด้วยความจริงใจ ปลอดภัย 100%
+			</p>
           <p className="text-sm text-muted-foreground">
             © 2024 DumStore. สงวนลิขสิทธิ์.
           </p>

@@ -2,7 +2,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BANK_INFO } from '@/lib/constants';
+import { useEffect, useState } from 'react';
+import type { BankInfo } from '@/types';
 import { useUIStore } from '@/stores/ui-store';
 import { Copy, Building2, CreditCard, User } from 'lucide-react';
 
@@ -12,6 +13,25 @@ interface BankInfoProps {
 
 export function BankInfo({ amount }: BankInfoProps) {
   const { addToast } = useUIStore();
+  const [bank, setBank] = useState<BankInfo>({ bankName: '', accountName: '', accountNumber: '' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBank = async () => {
+      try {
+        const res = await fetch('/api/settings/bank');
+        const json = await res.json();
+        if (json.success && json.data) {
+          setBank(json.data);
+        }
+      } catch (e) {
+        console.error('Failed to load bank info', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBank();
+  }, []);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -31,6 +51,16 @@ export function BankInfo({ amount }: BankInfoProps) {
     }
   };
 
+  if (loading) {
+    return (
+      <Card gaming>
+        <CardContent className="py-6">
+          กำลังโหลดข้อมูลบัญชีธนาคาร...
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card gaming>
       <CardHeader>
@@ -49,7 +79,7 @@ export function BankInfo({ amount }: BankInfoProps) {
             <Building2 className="h-6 w-6 text-neon-green" />
             <div>
               <div className="text-sm text-muted-foreground">ธนาคาร</div>
-              <div className="font-semibold">{BANK_INFO.bankName}</div>
+              <div className="font-semibold">{bank.bankName}</div>
             </div>
           </div>
         </div>
@@ -60,13 +90,13 @@ export function BankInfo({ amount }: BankInfoProps) {
             <CreditCard className="h-6 w-6 text-neon-blue" />
             <div>
               <div className="text-sm text-muted-foreground">เลขบัญชี</div>
-              <div className="font-semibold font-mono">{BANK_INFO.accountNumber}</div>
+              <div className="font-semibold font-mono">{bank.accountNumber}</div>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => copyToClipboard(BANK_INFO.accountNumber, 'เลขบัญชี')}
+            onClick={() => copyToClipboard(bank.accountNumber, 'เลขบัญชี')}
           >
             <Copy className="h-4 w-4" />
           </Button>
@@ -78,13 +108,13 @@ export function BankInfo({ amount }: BankInfoProps) {
             <User className="h-6 w-6 text-neon-purple" />
             <div>
               <div className="text-sm text-muted-foreground">ชื่อบัญชี</div>
-              <div className="font-semibold">{BANK_INFO.accountName}</div>
+              <div className="font-semibold">{bank.accountName}</div>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => copyToClipboard(BANK_INFO.accountName, 'ชื่อบัญชี')}
+            onClick={() => copyToClipboard(bank.accountName, 'ชื่อบัญชี')}
           >
             <Copy className="h-4 w-4" />
           </Button>

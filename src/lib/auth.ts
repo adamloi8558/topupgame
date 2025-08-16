@@ -225,4 +225,49 @@ export function generateSecureToken(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(32)))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+// Validate Auth for API Routes
+export async function validateAuth(request: Request): Promise<{
+  success: boolean;
+  userId?: string;
+  user?: AuthUser;
+  error?: string;
+  status?: number;
+}> {
+  try {
+    // ตรวจสอบ JWT token จาก Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return {
+        success: false,
+        error: 'ไม่พบ token การยืนยันตัวตน',
+        status: 401
+      };
+    }
+
+    const token = authHeader.substring(7);
+    const user = await verifyToken(token);
+
+    if (!user) {
+      return {
+        success: false,
+        error: 'Token ไม่ถูกต้อง',
+        status: 401
+      };
+    }
+
+    return {
+      success: true,
+      userId: user.id,
+      user
+    };
+  } catch (error) {
+    console.error('Auth validation error:', error);
+    return {
+      success: false,
+      error: 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์',
+      status: 500
+    };
+  }
 } 

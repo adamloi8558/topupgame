@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { useUIStore } from '@/stores/ui-store';
@@ -9,12 +9,7 @@ export const useAuth = () => {
   const { addToast } = useUIStore();
   const router = useRouter();
 
-  // Check auth status on mount
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/auth/me');
@@ -33,7 +28,12 @@ export const useAuth = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [login, logout, setLoading]);
+
+  // Check auth status on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const loginUser = async (credentials: LoginCredentials) => {
     try {

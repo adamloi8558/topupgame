@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -18,11 +18,7 @@ export function OrdersChart() {
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d');
 
-  useEffect(() => {
-    fetchOrdersData();
-  }, [timeRange]);
-
-  const fetchOrdersData = async () => {
+  const fetchOrdersData = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -53,7 +49,11 @@ export function OrdersChart() {
       console.error('Failed to fetch orders data:', error);
       setIsLoading(false);
     }
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    fetchOrdersData();
+  }, [fetchOrdersData]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('th-TH', {
