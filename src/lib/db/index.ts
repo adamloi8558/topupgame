@@ -2,32 +2,40 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
 
-// ฟังก์ชันสำหรับสร้าง database connection
-function createDbConnection() {
-  const connectionString = process.env.DATABASE_URL;
-  
-  // ในขั้นตอน build อาจไม่มี DATABASE_URL ให้ใช้ placeholder
-  if (!connectionString) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('DATABASE_URL is not set in production');
-    }
-    // สำหรับ build time ใช้ connection string placeholder
-    const placeholderUrl = 'postgres://user:pass@localhost:5432/db';
-    const client = postgres(placeholderUrl, { prepare: false });
-    return drizzle(client, { schema });
+let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
+
+// ฟังก์ชันสำหรับสร้าง database connection แบบ lazy
+function getDbConnection() {
+  if (_db) {
+    return _db;
   }
 
-  // สร้าง connection ปกติ
-  const client = postgres(connectionString, { prepare: false });
-  return drizzle(client, { schema });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is not set');
+  }
+
+  _client = postgres(connectionString, { prepare: false });
+  _db = drizzle(_client, { schema });
+  
+  return _db;
 }
 
-// Export db instance
-export const db = createDbConnection();
+// Export db instance ที่จะสร้าง connection เมื่อถูกเรียกใช้
+export const db = new Proxy({} as ReturnType<typeof drizzle>, {
+  get(target, prop) {
+    const connection = getDbConnection();
+    return (connection as any)[prop];
+  }
+});
 
 // Export client สำหรับกรณีที่ต้องการใช้ direct connection
-export const client = process.env.DATABASE_URL 
-  ? postgres(process.env.DATABASE_URL, { prepare: false })
-  : null;
+export const getClient = () => {
+  if (!_client) {
+    getDbConnection(); // สร้าง connection
+  }
+  return _client;
+};
 
 export * from './schema';
