@@ -36,7 +36,7 @@ const nextConfig = {
   },
   experimental: {
     esmExternals: false,
-    serverActions: true,
+    // serverActions เปิดใช้งานโดยค่าเริ่มต้นใน Next.js 14 แล้ว
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
